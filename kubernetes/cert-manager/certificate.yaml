@@ -1,0 +1,15 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: heart-of-news-tls
+  namespace: heart-of-news-production
+spec:
+  secretName: heart-of-news-tls
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer
+  commonName: api.heartofnews.com
+  dnsNames:
+  - api.heartofnews.com
+  - heartofnews.com
+  - www.heartofnews.com

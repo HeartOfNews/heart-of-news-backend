@@ -1,0 +1,81 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: heart-of-news-load-test
+  labels:
+    app: heart-of-news
+    component: load-test
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app: heart-of-news
+        component: load-test
+    spec:
+      containers:
+      - name: locust
+        image: locustio/locust:2.15.1
+        args:
+          - "--host=https://api.heartofnews.com"
+          - "--locustfile=/locust/locustfile.py"
+          - "--users=200"
+          - "--spawn-rate=10"
+          - "--run-time=10m"
+          - "--headless"
+          - "--csv=/results/results"
+          - "--html=/results/report.html"
+        env:
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        volumeMounts:
+        - name: locust-scripts
+          mountPath: /locust
+        - name: results
+          mountPath: /results
+        resources:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+          limits:
+            cpu: 2000m
+            memory: 1Gi
+      volumes:
+      - name: locust-scripts
+        configMap:
+          name: locust-scripts
+      - name: results
+        emptyDir: {}
+      restartPolicy: Never
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: locust-scripts
+  labels:
+    app: heart-of-news
+    component: load-test
+data:
+  # The actual content of the locustfile.py will be added by the deploy script
+  locustfile.py: |
+    # Placeholder for the locustfile content
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: locust
+  labels:
+    app: heart-of-news
+    component: load-test
+spec:
+  ports:
+  - port: 8089
+    targetPort: 8089
+    name: web
+  - port: 5557
+    targetPort: 5557
+    name: worker
+  selector:
+    app: heart-of-news
+    component: load-test
+  type: ClusterIP

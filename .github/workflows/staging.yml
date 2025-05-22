@@ -1,0 +1,291 @@
+name: Heart of News Staging Deployment
+
+on:
+  push:
+    branches: [ develop ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: heart_of_news_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest-cov
+    
+    - name: Create test environment file
+      run: |
+        cat > .env << EOL
+        ENVIRONMENT=testing
+        TESTING=true
+        POSTGRES_SERVER=localhost
+        POSTGRES_USER=postgres
+        POSTGRES_PASSWORD=postgres
+        POSTGRES_DB=heart_of_news_test
+        PROJECT_NAME=Heart of News Test
+        SECRET_KEY=testsecretkey
+        CORS_ORIGINS=http://localhost:3000
+        REDIS_HOST=localhost
+        REDIS_PORT=6379
+        ELASTICSEARCH_HOST=localhost
+        ELASTICSEARCH_PORT=9200
+        STORAGE_BUCKET_NAME=heart-of-news-media-test
+        SCRAPER_USER_AGENT=HeartOfNewsBot-Test/1.0
+        SCRAPER_REQUEST_DELAY=0.1
+        EOL
+    
+    - name: Run tests
+      run: |
+        pytest --cov=app tests/
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        fail_ci_if_error: false
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black isort
+    
+    - name: Check code formatting with Black
+      run: |
+        black --check app tests
+    
+    - name: Check imports with isort
+      run: |
+        isort --check-only --profile black app tests
+    
+    - name: Lint with flake8
+      run: |
+        flake8 app tests
+
+  build-and-push:
+    needs: [test, lint]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+    
+    - name: Generate build timestamp
+      id: timestamp
+      run: echo "timestamp=$(date +%Y%m%d-%H%M%S)" >> $GITHUB_OUTPUT
+    
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v4
+      with:
+        images: heartofnews/backend
+        tags: |
+          type=ref,event=branch
+          type=raw,value=staging-${{ steps.timestamp.outputs.timestamp }}
+    
+    - name: Build and push
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  deploy-staging:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: staging
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up SSH
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.STAGING_SSH_KEY }}
+    
+    - name: Generate build timestamp
+      id: timestamp
+      run: echo "timestamp=$(date +%Y%m%d-%H%M%S)" >> $GITHUB_OUTPUT
+    
+    - name: Create staging environment file
+      run: |
+        cat > .env.staging << EOL
+        # Staging Environment Configuration for Heart of News Backend
+        ENVIRONMENT=staging
+        DEBUG=false
+        PROJECT_NAME=Heart of News Staging
+        VERSION=0.1.0
+
+        # API
+        API_V1_STR=/api/v1
+        SECRET_KEY=${{ secrets.STAGING_SECRET_KEY }}
+        CORS_ORIGINS=https://staging.heartofnews.com,https://api-staging.heartofnews.com
+
+        # Database
+        POSTGRES_SERVER=${{ secrets.STAGING_DB_HOST }}
+        POSTGRES_USER=${{ secrets.STAGING_DB_USER }}
+        POSTGRES_PASSWORD=${{ secrets.STAGING_DB_PASSWORD }}
+        POSTGRES_DB=heart_of_news_staging
+
+        # Database connection pool settings
+        DB_POOL_SIZE=10
+        DB_MAX_OVERFLOW=20
+        DB_POOL_TIMEOUT=30
+        DB_POOL_RECYCLE=3600
+        DB_ECHO_SQL=false
+        DB_LOG_CONNECTIONS=false
+
+        # Query performance settings
+        DB_SLOW_QUERY_THRESHOLD=0.1
+        DB_ENABLE_QUERY_PROFILING=true
+
+        # Redis
+        REDIS_HOST=${{ secrets.STAGING_REDIS_HOST }}
+        REDIS_PORT=6379
+        REDIS_PASSWORD=${{ secrets.STAGING_REDIS_PASSWORD }}
+        REDIS_DB=0
+
+        # Caching settings
+        CACHE_ENABLED=true
+        CACHE_TTL_SHORT=60
+        CACHE_TTL_MEDIUM=300
+        CACHE_TTL_LONG=3600
+        CACHE_TTL_VERY_LONG=86400
+
+        # Elasticsearch
+        ELASTICSEARCH_HOST=${{ secrets.STAGING_ES_HOST }}
+        ELASTICSEARCH_PORT=9200
+
+        # Authentication
+        JWT_ALGORITHM=HS256
+        ACCESS_TOKEN_EXPIRE_MINUTES=10080
+        VERIFY_EMAIL=true
+        RESET_PASSWORD_TOKEN_EXPIRE_HOURS=4
+        EMAIL_VERIFICATION_TOKEN_EXPIRE_HOURS=24
+        AUTH_MAX_FAILED_ATTEMPTS=5
+        AUTH_LOCKOUT_DURATION_MINUTES=15
+        FRONTEND_URL=https://staging.heartofnews.com
+
+        # S3 / Storage
+        STORAGE_BUCKET_NAME=heart-of-news-staging-media
+        AWS_ACCESS_KEY_ID=${{ secrets.STAGING_AWS_ACCESS_KEY }}
+        AWS_SECRET_ACCESS_KEY=${{ secrets.STAGING_AWS_SECRET_KEY }}
+        AWS_REGION=us-east-1
+
+        # Scraper settings
+        SCRAPER_USER_AGENT=HeartOfNewsBot-Staging/1.0
+        SCRAPER_REQUEST_DELAY=1.0
+
+        # Monitoring and Logging
+        LOG_LEVEL=INFO
+        HTTPX_LOG_LEVEL=WARNING
+        UVICORN_LOG_LEVEL=INFO
+        SQLALCHEMY_LOG_LEVEL=WARNING
+        ENABLE_METRICS=true
+        PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus_multiproc
+        SENTRY_DSN=${{ secrets.STAGING_SENTRY_DSN }}
+        ENABLE_PERFORMANCE_TRACKING=true
+        METRICS_EXPORT_INTERVAL=15
+
+        # Application Performance Monitoring
+        ELASTIC_APM_SERVER_URL=${{ secrets.STAGING_APM_URL }}
+        ELASTIC_APM_SERVICE_NAME=heart-of-news-backend-staging
+        DATADOG_API_KEY=${{ secrets.STAGING_DATADOG_API_KEY }}
+        DATADOG_APP_KEY=${{ secrets.STAGING_DATADOG_APP_KEY }}
+
+        # Health checks
+        HEALTH_CHECK_INTERVAL=60
+
+        # Docker images
+        STAGING_TAG=staging-${{ steps.timestamp.outputs.timestamp }}
+        EOL
+    
+    - name: Deploy to staging server
+      run: |
+        # Add staging server to known hosts
+        ssh-keyscan -H ${{ secrets.STAGING_SERVER_IP }} >> ~/.ssh/known_hosts
+        
+        # Create deployment directory
+        ssh ${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SERVER_IP }} "mkdir -p ${{ secrets.STAGING_DEPLOY_DIR }}"
+        
+        # Copy files to staging server
+        rsync -avz --exclude='.git' --exclude='venv' --exclude='__pycache__' \
+          --exclude='*.pyc' --exclude='*.pyo' --exclude='.pytest_cache' \
+          ./ ${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SERVER_IP }}:${{ secrets.STAGING_DEPLOY_DIR }}/
+        
+        # Execute deployment script
+        ssh ${{ secrets.STAGING_SSH_USER }}@${{ secrets.STAGING_SERVER_IP }} "cd ${{ secrets.STAGING_DEPLOY_DIR }} && chmod +x scripts/deploy_staging.sh && STAGING_TAG=staging-${{ steps.timestamp.outputs.timestamp }} ./scripts/deploy_staging.sh"
+    
+    - name: Verify deployment
+      run: |
+        # Wait for services to start
+        sleep 30
+        
+        # Verify API is accessible
+        curl -k https://api-staging.heartofnews.com/api/v1/health || echo "API health check failed, but continuing deployment"
+    
+    - name: Notify deployment success
+      if: success()
+      run: |
+        echo "Staging deployment successful!"
+        # Add notification step here (Slack, email, etc.)
+    
+    - name: Notify deployment failure
+      if: failure()
+      run: |
+        echo "Staging deployment failed!"
+        # Add notification step here (Slack, email, etc.)

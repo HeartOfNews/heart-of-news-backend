@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-worker
+spec:
+  replicas: 4
+  template:
+    spec:
+      containers:
+      - name: celery-worker
+        resources:
+          requests:
+            cpu: 500m
+            memory: 768Mi
+          limits:
+            cpu: 2000m
+            memory: 2Gi
+        command: ["celery", "-A", "app.worker", "worker", "--loglevel=info", "--concurrency=6"]
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+      nodeSelector:
+        cloud.google.com/gke-nodepool: worker-pool
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: component
+                  operator: In
+                  values:
+                  - celery-worker
+              topologyKey: "kubernetes.io/hostname"
+      # Add tolerations for specific nodes if needed
+      tolerations:
+      - key: "app"
+        operator: "Equal"
+        value: "heart-of-news"
+        effect: "NoSchedule"

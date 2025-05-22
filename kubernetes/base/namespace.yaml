@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: heart-of-news
+  labels:
+    name: heart-of-news
+    app: heart-of-news

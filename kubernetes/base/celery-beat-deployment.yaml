@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-beat
+  labels:
+    app: heart-of-news
+    component: celery-beat
+spec:
+  replicas: 1  # Celery beat should only have 1 replica
+  selector:
+    matchLabels:
+      app: heart-of-news
+      component: celery-beat
+  strategy:
+    type: Recreate  # Use recreate strategy to avoid duplicate beat schedules
+  template:
+    metadata:
+      labels:
+        app: heart-of-news
+        component: celery-beat
+    spec:
+      containers:
+      - name: celery-beat
+        image: heartofnews/backend:latest  # Will be overridden by kustomize
+        imagePullPolicy: Always
+        command: ["celery", "-A", "app.worker", "beat", "--loglevel=info"]
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        env:
+        - name: K8S_NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: K8S_POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: K8S_POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        # All other environment variables will be supplied by ConfigMap and Secrets
+        envFrom:
+        - configMapRef:
+            name: api-config
+        - secretRef:
+            name: api-secrets
+        volumeMounts:
+        - name: tmp-volume
+          mountPath: /tmp
+      volumes:
+      - name: tmp-volume
+        emptyDir: {}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000

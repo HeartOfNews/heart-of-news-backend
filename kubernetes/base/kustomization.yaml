@@ -1,0 +1,64 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - namespace.yaml
+  - api-deployment.yaml
+  - api-service.yaml
+  - celery-worker-deployment.yaml
+  - celery-beat-deployment.yaml
+  - scraper-deployment.yaml
+  - ingress.yaml
+  - api-hpa.yaml
+  - worker-hpa.yaml
+
+commonLabels:
+  app: heart-of-news
+  app.kubernetes.io/name: heart-of-news
+  app.kubernetes.io/instance: heart-of-news
+
+# These will be overridden by environment overlays
+configMapGenerator:
+  - name: api-config
+    literals:
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - PROJECT_NAME=Heart of News
+      - API_V1_STR=/api/v1
+      - CORS_ORIGINS=https://heartofnews.com,https://api.heartofnews.com,https://www.heartofnews.com
+      - POSTGRES_DB=heart_of_news_production
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - ELASTICSEARCH_PORT=9200
+      - ELASTICSEARCH_USE_SSL=true
+      - VERIFY_EMAIL=true
+      - AUTH_MAX_FAILED_ATTEMPTS=5
+      - AUTH_LOCKOUT_DURATION_MINUTES=15
+      - FRONTEND_URL=https://heartofnews.com
+      - STORAGE_BUCKET_NAME=heart-of-news-production-media
+      - AWS_REGION=us-east-1
+      - SCRAPER_USER_AGENT=HeartOfNewsBot/1.0
+      - SCRAPER_REQUEST_DELAY=1.0
+      - LOG_LEVEL=INFO
+      - HTTPX_LOG_LEVEL=WARNING
+      - UVICORN_LOG_LEVEL=WARNING
+      - SQLALCHEMY_LOG_LEVEL=WARNING
+      - ENABLE_METRICS=true
+      - PROMETHEUS_MULTIPROC_DIR=/tmp/prometheus_multiproc
+      - ENABLE_PERFORMANCE_TRACKING=true
+      - METRICS_EXPORT_INTERVAL=15
+      - ELASTIC_APM_SERVICE_NAME=heart-of-news-backend
+      - HEALTH_CHECK_INTERVAL=60
+      - EMAILS_FROM_EMAIL=news@heartofnews.com
+      - EMAILS_FROM_NAME=Heart of News
+      - RATE_LIMIT_ENABLED=true
+      - RATE_LIMIT_DEFAULT=300
+      - RATE_LIMIT_AUTHENTICATED=1000
+      - RATE_LIMIT_WINDOW_SECONDS=60
+      - SECURITY_HEADERS_ENABLED=true
+
+# Configuration for secret values will be added in environment overlays
+secretGenerator: []
+
+# We'll set the image in environment overlays
+images: []

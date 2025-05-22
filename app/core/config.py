@@ -48,6 +48,18 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "heart_of_news"
     SQLALCHEMY_DATABASE_URI: Optional[PostgresDsn] = None
     
+    # Database connection pool settings
+    DB_POOL_SIZE: int = 5
+    DB_MAX_OVERFLOW: int = 10
+    DB_POOL_TIMEOUT: int = 30
+    DB_POOL_RECYCLE: int = 3600
+    DB_ECHO_SQL: bool = False
+    DB_LOG_CONNECTIONS: bool = False
+    
+    # Query performance settings
+    DB_SLOW_QUERY_THRESHOLD: float = 0.1  # seconds
+    DB_ENABLE_QUERY_PROFILING: bool = True
+    
     @validator("SQLALCHEMY_DATABASE_URI", pre=True)
     def assemble_db_connection(cls, v: Optional[str], values: dict[str, any]) -> any:
         if isinstance(v, str):
@@ -63,6 +75,15 @@ class Settings(BaseSettings):
     # Redis
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
+    REDIS_PASSWORD: Optional[str] = None
+    REDIS_DB: int = 0
+    
+    # Caching settings
+    CACHE_ENABLED: bool = True
+    CACHE_TTL_SHORT: int = 60  # 1 minute
+    CACHE_TTL_MEDIUM: int = 300  # 5 minutes
+    CACHE_TTL_LONG: int = 3600  # 1 hour
+    CACHE_TTL_VERY_LONG: int = 86400  # 24 hours
     
     # Elasticsearch
     ELASTICSEARCH_HOST: str = "localhost"

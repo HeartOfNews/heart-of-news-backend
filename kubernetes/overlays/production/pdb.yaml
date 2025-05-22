@@ -1,0 +1,27 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: api-pdb
+  labels:
+    app: heart-of-news
+    component: api
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: heart-of-news
+      component: api
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: celery-worker-pdb
+  labels:
+    app: heart-of-news
+    component: celery-worker
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: heart-of-news
+      component: celery-worker

@@ -7,14 +7,3 @@ datasources:
     url: http://prometheus:9090
     isDefault: true
     editable: false
-
-  - name: Elasticsearch
-    type: elasticsearch
-    access: proxy
-    database: "[logstash-]YYYY.MM.DD"
-    url: http://elasticsearch:9200
-    jsonData:
-      esVersion: 7.10.0
-      timeField: "@timestamp"
-      logMessageField: message
-    editable: false

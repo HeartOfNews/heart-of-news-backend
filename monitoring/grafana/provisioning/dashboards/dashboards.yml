@@ -1,13 +1,11 @@
 apiVersion: 1
 
 providers:
-  - name: 'Heart of News Dashboards'
+  - name: 'Heart of News Staging'
     orgId: 1
     folder: 'Heart of News'
     type: file
     disableDeletion: false
     editable: true
-    updateIntervalSeconds: 10
-    allowUiUpdates: true
     options:
       path: /var/lib/grafana/dashboards

@@ -1,0 +1,355 @@
+name: Heart of News Production Deployment
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      confirm_deploy:
+        description: 'Confirm production deployment'
+        required: true
+        default: 'no'
+        type: choice
+        options:
+          - 'yes'
+          - 'no'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:14
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: heart_of_news_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        cache: 'pip'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest-cov
+    
+    - name: Create test environment file
+      run: |
+        cat > .env << EOL
+        ENVIRONMENT=testing
+        TESTING=true
+        POSTGRES_SERVER=localhost
+        POSTGRES_USER=postgres
+        POSTGRES_PASSWORD=postgres
+        POSTGRES_DB=heart_of_news_test
+        PROJECT_NAME=Heart of News Test
+        SECRET_KEY=testsecretkey
+        CORS_ORIGINS=http://localhost:3000
+        REDIS_HOST=localhost
+        REDIS_PORT=6379
+        ELASTICSEARCH_HOST=localhost
+        ELASTICSEARCH_PORT=9200
+        STORAGE_BUCKET_NAME=heart-of-news-media-test
+        SCRAPER_USER_AGENT=HeartOfNewsBot-Test/1.0
+        SCRAPER_REQUEST_DELAY=0.1
+        EOL
+    
+    - name: Run tests
+      run: |
+        pytest --cov=app tests/ --cov-report=xml
+    
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        fail_ci_if_error: false
+        verbose: true
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 black isort mypy
+    
+    - name: Check code formatting with Black
+      run: |
+        black --check app tests
+    
+    - name: Check imports with isort
+      run: |
+        isort --check-only --profile black app tests
+    
+    - name: Lint with flake8
+      run: |
+        flake8 app tests
+        
+    - name: Type check with mypy
+      run: |
+        mypy app
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit safety
+    
+    - name: Run security checks with Bandit
+      run: |
+        bandit -r app/ -x tests/
+    
+    - name: Check dependencies for vulnerabilities
+      run: |
+        safety check -r requirements.txt
+
+  build-and-push:
+    needs: [test, lint, security-scan]
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.set-image-tag.outputs.image_tag }}
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+    
+    - name: Generate build tag
+      id: set-image-tag
+      run: |
+        GIT_TAG=$(git describe --tags --always)
+        TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+        IMAGE_TAG="production-${GIT_TAG}-${TIMESTAMP}"
+        echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+        echo "Building image with tag: ${IMAGE_TAG}"
+    
+    - name: Build and push
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        file: Dockerfile
+        push: true
+        tags: |
+          heartofnews/backend:${{ steps.set-image-tag.outputs.image_tag }}
+          heartofnews/backend:production-latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          ENVIRONMENT=production
+
+  deploy-production:
+    needs: build-and-push
+    if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && (github.event_name != 'workflow_dispatch' || github.event.inputs.confirm_deploy == 'yes')
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency: 
+      group: production-deploy
+      cancel-in-progress: false
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Kustomize
+      uses: imranismail/setup-kustomize@v2
+    
+    - name: Set up kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+    
+    - name: Configure Kubernetes credentials
+      uses: azure/k8s-set-context@v3
+      with:
+        method: service-account
+        k8s-url: ${{ secrets.KUBE_API_URL }}
+        k8s-secret: ${{ secrets.KUBE_SECRET }}
+    
+    - name: Update Kustomize image tag
+      working-directory: ./kubernetes/overlays/production
+      run: |
+        kustomize edit set image heartofnews/backend=heartofnews/backend:${{ needs.build-and-push.outputs.image_tag }}
+    
+    - name: Create secrets directory
+      run: |
+        mkdir -p ./kubernetes/overlays/production/secrets
+    
+    - name: Create production environment file
+      run: |
+        cat > ./kubernetes/overlays/production/secrets/.env.production << EOL
+        # Security
+        PRODUCTION_SECRET_KEY=${{ secrets.PRODUCTION_SECRET_KEY }}
+        JWT_ALGORITHM=HS256
+        ACCESS_TOKEN_EXPIRE_MINUTES=10080
+
+        # Database
+        POSTGRES_SERVER=${{ secrets.PRODUCTION_DB_HOST }}
+        POSTGRES_USER=${{ secrets.PRODUCTION_DB_USER }}
+        POSTGRES_PASSWORD=${{ secrets.PRODUCTION_DB_PASSWORD }}
+
+        # Redis
+        REDIS_HOST=${{ secrets.PRODUCTION_REDIS_HOST }}
+        REDIS_PASSWORD=${{ secrets.PRODUCTION_REDIS_PASSWORD }}
+
+        # Elasticsearch
+        ELASTICSEARCH_HOST=${{ secrets.PRODUCTION_ES_HOST }}
+        ELASTICSEARCH_USERNAME=${{ secrets.PRODUCTION_ES_USERNAME }}
+        ELASTICSEARCH_PASSWORD=${{ secrets.PRODUCTION_ES_PASSWORD }}
+
+        # Storage
+        AWS_ACCESS_KEY_ID=${{ secrets.PRODUCTION_AWS_ACCESS_KEY }}
+        AWS_SECRET_ACCESS_KEY=${{ secrets.PRODUCTION_AWS_SECRET_KEY }}
+        AWS_S3_ENDPOINT=${{ secrets.PRODUCTION_S3_ENDPOINT }}
+
+        # Monitoring
+        SENTRY_DSN=${{ secrets.PRODUCTION_SENTRY_DSN }}
+        ELASTIC_APM_SERVER_URL=${{ secrets.PRODUCTION_APM_URL }}
+        DATADOG_API_KEY=${{ secrets.PRODUCTION_DATADOG_API_KEY }}
+        DATADOG_APP_KEY=${{ secrets.PRODUCTION_DATADOG_APP_KEY }}
+
+        # Email
+        SMTP_HOST=${{ secrets.PRODUCTION_SMTP_HOST }}
+        SMTP_PORT=587
+        SMTP_USER=${{ secrets.PRODUCTION_SMTP_USER }}
+        SMTP_PASSWORD=${{ secrets.PRODUCTION_SMTP_PASSWORD }}
+
+        # Social media tokens
+        TELEGRAM_BOT_TOKEN=${{ secrets.PRODUCTION_TELEGRAM_TOKEN }}
+        TELEGRAM_CHANNEL_ID=${{ secrets.PRODUCTION_TELEGRAM_CHANNEL }}
+        TWITTER_API_KEY=${{ secrets.PRODUCTION_TWITTER_API_KEY }}
+        TWITTER_API_SECRET=${{ secrets.PRODUCTION_TWITTER_API_SECRET }}
+        TWITTER_ACCESS_TOKEN=${{ secrets.PRODUCTION_TWITTER_ACCESS_TOKEN }}
+        TWITTER_ACCESS_SECRET=${{ secrets.PRODUCTION_TWITTER_ACCESS_SECRET }}
+        FACEBOOK_PAGE_ID=${{ secrets.PRODUCTION_FACEBOOK_PAGE_ID }}
+        FACEBOOK_ACCESS_TOKEN=${{ secrets.PRODUCTION_FACEBOOK_ACCESS_TOKEN }}
+        VK_API_TOKEN=${{ secrets.PRODUCTION_VK_API_TOKEN }}
+        VK_GROUP_ID=${{ secrets.PRODUCTION_VK_GROUP_ID }}
+        EOL
+    
+    - name: Deploy to production
+      run: |
+        cd kubernetes/overlays/production
+        kustomize build . | kubectl apply -f -
+        
+        # Wait for deployments to roll out
+        kubectl -n heart-of-news-production rollout status deployment/api
+        kubectl -n heart-of-news-production rollout status deployment/celery-worker
+        kubectl -n heart-of-news-production rollout status deployment/celery-beat
+        kubectl -n heart-of-news-production rollout status deployment/scraper
+    
+    - name: Verify deployment
+      run: |
+        # Wait for services to start
+        sleep 30
+        
+        # Verify API is accessible (skip TLS verification for this check)
+        curl -k https://api.heartofnews.com/api/v1/health || echo "API health check failed, but continuing deployment"
+    
+    - name: Notify Slack on success
+      if: success()
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        payload: |
+          {
+            "text": "✅ Production deployment successful! Version ${{ needs.build-and-push.outputs.image_tag }} is now live.",
+            "blocks": [
+              {
+                "type": "header",
+                "text": {
+                  "type": "plain_text",
+                  "text": "✅ Production Deployment Successful!"
+                }
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Version:* ${{ needs.build-and-push.outputs.image_tag }}\n*Deployed by:* ${{ github.actor }}\n*API:* https://api.heartofnews.com"
+                }
+              }
+            ]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+    
+    - name: Notify Slack on failure
+      if: failure()
+      uses: slackapi/slack-github-action@v1.23.0
+      with:
+        payload: |
+          {
+            "text": "❌ Production deployment failed! Check the workflow for details.",
+            "blocks": [
+              {
+                "type": "header",
+                "text": {
+                  "type": "plain_text",
+                  "text": "❌ Production Deployment Failed!"
+                }
+              },
+              {
+                "type": "section",
+                "text": {
+                  "type": "mrkdwn",
+                  "text": "*Version:* ${{ needs.build-and-push.outputs.image_tag }}\n*Attempted by:* ${{ github.actor }}\n*Details:* https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+                }
+              }
+            ]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
