@@ -1,0 +1,62 @@
+groups:
+  - name: heart-of-news-alerts
+    rules:
+      # HTTP error rate alert
+      - alert: HighErrorRate
+        expr: sum(rate(http_requests_total{status_code=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value | humanizePercentage }} over the past 5 minutes"
+
+      # Slow endpoint alert
+      - alert: SlowEndpoint
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, endpoint)) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow endpoint detected: {{ $labels.endpoint }}"
+          description: "95th percentile response time for {{ $labels.endpoint }} is {{ $value }}s"
+
+      # High CPU usage alert
+      - alert: HighCPUUsage
+        expr: avg(rate(process_cpu_seconds_total[5m]) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value | humanizePercentage }} over the past 5 minutes"
+
+      # Database connection pool alert
+      - alert: DatabaseConnectionPoolSaturation
+        expr: scalar(sum(db_pool_checked_out) / sum(db_pool_size)) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database connection pool nearing saturation"
+          description: "Connection pool utilization is {{ $value | humanizePercentage }}"
+
+      # Scraper failure alert
+      - alert: ScraperFailures
+        expr: increase(articles_scraped_total{status="error"}[1h]) > 5
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Excessive scraper failures detected"
+          description: "{{ $value }} scraper failures in the last hour"
+
+      # Bias analysis error alert
+      - alert: BiasAnalysisErrors
+        expr: increase(bias_analysis_errors_total[1h]) > 10
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Bias analysis errors detected"
+          description: "{{ $value }} bias analysis errors in the last hour"
