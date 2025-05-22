@@ -1,0 +1,67 @@
+{
+  "name": "heart-of-news-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "prepare": "husky install"
+  },
+  "dependencies": {
+    "@headlessui/react": "^1.7.17",
+    "@heroicons/react": "^2.0.18",
+    "axios": "^1.6.2",
+    "clsx": "^2.0.0",
+    "date-fns": "^2.30.0",
+    "framer-motion": "^10.16.5",
+    "next": "14.0.3",
+    "next-auth": "^4.24.5",
+    "next-themes": "^0.2.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.48.2",
+    "swr": "^2.2.4",
+    "tailwind-merge": "^2.0.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.1.4",
+    "@testing-library/react": "^14.1.2",
+    "@types/jest": "^29.5.10",
+    "@types/node": "^20.9.3",
+    "@types/react": "^18.2.38",
+    "@types/react-dom": "^18.2.16",
+    "@typescript-eslint/eslint-plugin": "^6.12.0",
+    "@typescript-eslint/parser": "^6.12.0",
+    "autoprefixer": "^10.4.16",
+    "eslint": "^8.54.0",
+    "eslint-config-next": "14.0.3",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-jest": "^27.6.0",
+    "eslint-plugin-jsx-a11y": "^6.8.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "husky": "^8.0.3",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "lint-staged": "^15.1.0",
+    "postcss": "^8.4.31",
+    "prettier": "^3.1.0",
+    "prettier-plugin-tailwindcss": "^0.5.7",
+    "tailwindcss": "^3.3.5",
+    "typescript": "^5.3.2"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
+  }
+}

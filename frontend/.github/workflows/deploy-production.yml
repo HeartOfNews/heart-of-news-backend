@@ -1,0 +1,80 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      confirm_deploy:
+        description: 'Confirm production deployment'
+        required: true
+        default: 'no'
+        type: choice
+        options:
+          - 'yes'
+          - 'no'
+
+jobs:
+  deploy:
+    if: github.event_name == 'push' || github.event.inputs.confirm_deploy == 'yes'
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Create .env.production file
+        run: |
+          cat > .env.production << EOL
+          NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+          NEXT_PUBLIC_ENVIRONMENT=production
+          NEXTAUTH_URL=${{ secrets.NEXTAUTH_URL }}
+          NEXTAUTH_SECRET=${{ secrets.NEXTAUTH_SECRET }}
+          NEXT_PUBLIC_ENABLE_DARK_MODE=true
+          NEXT_PUBLIC_ENABLE_ADMIN_DASHBOARD=true
+          NEXT_PUBLIC_SITE_URL=${{ secrets.NEXT_PUBLIC_SITE_URL }}
+          EOL
+      
+      - name: Build project
+        run: npm run build
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      
+      - name: Deploy to S3
+        run: |
+          aws s3 sync out/ s3://${{ secrets.S3_BUCKET }} --delete
+      
+      - name: Invalidate CloudFront cache
+        run: |
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/*"
+      
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+      
+      - name: Notify deployment
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data '{"text":"🚀 Frontend deployed to production environment at https://heartofnews.com"}' ${{ secrets.SLACK_WEBHOOK }}
