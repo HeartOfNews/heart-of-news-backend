@@ -82,3 +82,4 @@ alembic/versions/__pycache__/
 # OS specific
 .DS_Store
 Thumbs.db
+**/.claude/settings.local.json
