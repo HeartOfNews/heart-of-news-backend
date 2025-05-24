@@ -1,0 +1,2172 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart of News - Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .bias-indicator {
+            transition: all 0.3s ease;
+        }
+        .article-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .loading {
+            animation: pulse 2s infinite;
+        }
+        
+        /* Language-specific optimizations */
+        .lang-en {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+        }
+        
+        .lang-ru {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PT Sans', sans-serif;
+            line-height: 1.7;
+            letter-spacing: 0.01em;
+        }
+        
+        .lang-es {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.65;
+        }
+        
+        .lang-zh {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            line-height: 1.8;
+            letter-spacing: 0.02em;
+        }
+        
+        .lang-ar {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Tahoma', 'Arabic UI Text', sans-serif;
+            line-height: 1.75;
+            letter-spacing: 0.01em;
+            direction: rtl;
+            text-align: right;
+        }
+        
+        .lang-fr {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.65;
+        }
+        
+        /* Flexible text containers */
+        .text-container {
+            min-height: fit-content;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            hyphens: auto;
+            line-height: inherit;
+        }
+        
+        /* Language-specific text sizing with better spacing */
+        .text-responsive {
+            font-size: clamp(0.75rem, 2.5vw, 0.875rem);
+            line-height: 1.6;
+        }
+        
+        .title-responsive {
+            font-size: clamp(1rem, 3.5vw, 1.25rem);
+            line-height: 1.4;
+        }
+        
+        .hero-responsive {
+            font-size: clamp(1.5rem, 6vw, 3rem);
+            line-height: 1.2;
+        }
+        
+        /* Enhanced navigation with proper spacing */
+        .nav-item {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100px;
+            padding: 0.25rem 0.5rem;
+            margin: 0 0.125rem;
+            border-radius: 0.375rem;
+            transition: all 0.2s ease;
+        }
+        
+        @media (min-width: 768px) {
+            .nav-item {
+                max-width: 140px;
+                padding: 0.5rem 0.75rem;
+                margin: 0 0.25rem;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .nav-item {
+                max-width: none;
+                padding: 0.5rem 1rem;
+                margin: 0 0.5rem;
+            }
+        }
+        
+        /* Button text optimization with flexible sizing */
+        .btn-text {
+            display: inline-block;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            line-height: 1.3;
+        }
+        
+        @media (max-width: 640px) {
+            .btn-text {
+                font-size: 0.75rem;
+                line-height: 1.2;
+            }
+        }
+        
+        /* Prevent text overflow in cards */
+        .card-content {
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        /* Improved article card layout */
+        .article-card {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 400px;
+        }
+        
+        .article-card .card-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+        
+        /* Header spacing optimization */
+        .header-content {
+            min-height: 4rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        /* Language selector improvements */
+        .language-dropdown {
+            min-width: 140px;
+            max-width: 180px;
+        }
+        
+        /* Additional language optimizations */
+        [lang="ar"] {
+            text-align: right;
+        }
+        
+        [lang="ar"] .text-center {
+            text-align: center;
+        }
+        
+        [lang="zh"] {
+            word-break: keep-all;
+            overflow-wrap: break-word;
+        }
+        
+        /* Improved text rendering for all languages */
+        .text-container {
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* Dynamic spacing for different scripts */
+        .lang-ar .space-x-8 > * + * {
+            margin-right: 2rem;
+            margin-left: 0;
+        }
+        
+        .lang-ar .space-x-6 > * + * {
+            margin-right: 1.5rem;
+            margin-left: 0;
+        }
+        
+        .lang-ar .space-x-4 > * + * {
+            margin-right: 1rem;
+            margin-left: 0;
+        }
+        
+        /* Additional text overflow prevention */
+        .prevent-overflow {
+            overflow: hidden;
+            word-break: break-word;
+            hyphens: auto;
+        }
+        
+        /* Mobile text optimizations */
+        @media (max-width: 768px) {
+            .nav-item {
+                font-size: 0.75rem;
+                max-width: 80px;
+                padding: 0.25rem 0.375rem;
+            }
+            
+            .hero-responsive {
+                font-size: clamp(1.25rem, 5vw, 2rem);
+                line-height: 1.1;
+            }
+            
+            .text-responsive {
+                font-size: clamp(0.7rem, 2vw, 0.8rem);
+                line-height: 1.5;
+            }
+            
+            .title-responsive {
+                font-size: clamp(0.9rem, 3vw, 1.1rem);
+                line-height: 1.3;
+            }
+        }
+        
+        /* Section header improvements */
+        .section-header {
+            word-spacing: -0.05em;
+            letter-spacing: -0.01em;
+        }
+        
+        /* Card text container improvements */
+        .card-text {
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .card-title {
+            -webkit-line-clamp: 2;
+            min-height: 2.5rem;
+        }
+        
+        .card-summary {
+            -webkit-line-clamp: 3;
+            min-height: 4.5rem;
+        }
+        
+        /* Improved spacing for all elements */
+        .spacing-optimized {
+            margin: 0.5rem 0;
+            padding: 0.25rem 0;
+        }
+    </style>
+</head>
+<body class="h-full transition-colors duration-200" :class="[darkMode ? 'bg-gray-900' : 'bg-gray-50', 'lang-' + currentLanguage]" x-data="heartOfNews()">
+    <!-- Top Dark Strip -->
+    <div class="bg-gray-900 text-white py-2 px-4">
+        <div class="mx-auto max-w-7xl flex items-center justify-between text-sm">
+            <div class="flex items-center space-x-4">
+                <span class="flex items-center">
+                    <i class="fas fa-shield-alt mr-2 text-green-400"></i>
+                    <span x-text="translate('verifiedReporting')"></span>
+                </span>
+                <span class="hidden md:flex items-center">
+                    <i class="fas fa-clock mr-2 text-blue-400"></i>
+                    <span x-text="translate('updatedHourly')"></span>
+                </span>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span class="hidden sm:flex items-center">
+                    <i class="fas fa-users mr-2 text-yellow-400"></i>
+                    <span x-text="isLoggedIn ? translate('welcomeBack') : translate('joinCommunity')"></span>
+                </span>
+                <div class="flex items-center">
+                    <div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                    <span class="text-xs" x-text="translate('live')"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Header -->
+    <header class="shadow-sm transition-colors duration-200" :class="darkMode ? 'bg-gray-800' : 'bg-white'">
+        <nav class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center min-h-16 py-2">
+                <div class="flex items-center flex-shrink-0">
+                    <div class="flex items-center header-content">
+                        <template x-if="customLogo">
+                            <img :src="customLogo" alt="Custom Logo" class="h-8 w-8 object-contain rounded">
+                        </template>
+                        <template x-if="!customLogo">
+                            <div class="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
+                                <span class="text-white font-bold text-sm">H</span>
+                            </div>
+                        </template>
+                        <h1 class="ml-3 text-lg lg:text-xl font-bold transition-colors duration-200 text-container" :class="darkMode ? 'text-white' : 'text-gray-900'">Heart of News</h1>
+                    </div>
+                </div>
+                <div class="hidden lg:flex items-center justify-center flex-1 mx-4">
+                    <div class="flex items-center space-x-1 xl:space-x-2">
+                        <a href="#" @click="currentSection = 'home'" :class="currentSection === 'home' ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-900')" class="transition-colors duration-200 nav-item text-container" x-text="translate('home')"></a>
+                        <a href="#" @click="currentSection = 'articles'" :class="currentSection === 'articles' ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-900')" class="transition-colors duration-200 nav-item text-container" x-text="translate('allNews')"></a>
+                        <a href="#" @click="currentSection = 'political'" :class="currentSection === 'political' ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-900')" class="transition-colors duration-200 nav-item text-container">
+                            <i class="fas fa-flag-usa mr-1"></i><span x-text="translate('political')"></span>
+                        </a>
+                        <a href="#" @click="currentSection = 'economic'" :class="currentSection === 'economic' ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-900')" class="transition-colors duration-200 nav-item text-container">
+                            <i class="fas fa-chart-line mr-1"></i><span x-text="translate('economic')"></span>
+                        </a>
+                        <a href="#" @click="currentSection = 'crypto'" :class="currentSection === 'crypto' ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-900')" class="transition-colors duration-200 nav-item text-container">
+                            <i class="fab fa-bitcoin mr-1"></i><span x-text="translate('crypto')"></span>
+                        </a>
+                        <a href="#" @click="currentSection = 'esports'" :class="currentSection === 'esports' ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-900')" class="transition-colors duration-200 nav-item text-container">
+                            <i class="fas fa-gamepad mr-1"></i><span x-text="translate('esports')"></span>
+                        </a>
+                        <a href="#" @click="currentSection = 'sources'" :class="currentSection === 'sources' ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-900')" class="transition-colors duration-200 nav-item text-container">
+                            <i class="fas fa-newspaper mr-1"></i><span x-text="translate('sources')"></span>
+                        </a>
+                        <a href="#" @click="currentSection = 'about'" :class="currentSection === 'about' ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-500 hover:text-gray-900')" class="transition-colors duration-200 nav-item text-container" x-text="translate('about')"></a>
+                    </div>
+                </div>
+                
+                <!-- Mobile menu button -->
+                <div class="lg:hidden">
+                    <button @click="showMobileMenu = !showMobileMenu" class="p-2 rounded-lg transition-colors duration-200" :class="darkMode ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-600'">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <!-- Language Selector -->
+                    <div class="relative">
+                        <button @click="showLanguageSelector = !showLanguageSelector" class="p-2 rounded-lg transition-colors duration-200 flex items-center" :class="darkMode ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-600'">
+                            <i class="fas fa-globe mr-1"></i>
+                            <span class="text-xs uppercase font-semibold" x-text="currentLanguage"></span>
+                            <i class="fas fa-chevron-down text-xs ml-1"></i>
+                        </button>
+                        
+                        <!-- Language Dropdown -->
+                        <div x-show="showLanguageSelector" @click.away="showLanguageSelector = false" x-transition class="absolute right-0 mt-2 rounded-lg shadow-lg border z-50 language-dropdown" :class="darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'">
+                            <div class="py-2">
+                                <button @click="setLanguage('en')" class="w-full text-left px-4 py-2 text-sm transition-colors duration-200 flex items-center" :class="currentLanguage === 'en' ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100')">
+                                    <span class="mr-3">🇺🇸</span>English
+                                </button>
+                                <button @click="setLanguage('ru')" class="w-full text-left px-4 py-2 text-sm transition-colors duration-200 flex items-center" :class="currentLanguage === 'ru' ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100')">
+                                    <span class="mr-3">🇷🇺</span>Русский
+                                </button>
+                                <button @click="setLanguage('es')" class="w-full text-left px-4 py-2 text-sm transition-colors duration-200 flex items-center" :class="currentLanguage === 'es' ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100')">
+                                    <span class="mr-3">🇪🇸</span>Español
+                                </button>
+                                <button @click="setLanguage('zh')" class="w-full text-left px-4 py-2 text-sm transition-colors duration-200 flex items-center" :class="currentLanguage === 'zh' ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100')">
+                                    <span class="mr-3">🇨🇳</span>中文
+                                </button>
+                                <button @click="setLanguage('fr')" class="w-full text-left px-4 py-2 text-sm transition-colors duration-200 flex items-center" :class="currentLanguage === 'fr' ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100')">
+                                    <span class="mr-3">🇫🇷</span>Français
+                                </button>
+                                <button @click="setLanguage('ar')" class="w-full text-left px-4 py-2 text-sm transition-colors duration-200 flex items-center" :class="currentLanguage === 'ar' ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100')">
+                                    <span class="mr-3">🇸🇦</span>العربية
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Theme Selector -->
+                    <div class="relative" x-data="{ showThemes: false }">
+                        <button @click="showThemes = !showThemes" class="p-2 rounded-lg transition-colors duration-200 flex items-center" :class="darkMode ? 'hover:bg-gray-700 text-yellow-400' : 'hover:bg-gray-100 text-gray-600'">
+                            <i :class="darkMode ? 'fas fa-sun' : 'fas fa-moon'" class="mr-1"></i>
+                            <i class="fas fa-chevron-down text-xs"></i>
+                        </button>
+                        
+                        <!-- Theme Dropdown -->
+                        <div x-show="showThemes" @click.away="showThemes = false" x-transition class="absolute right-0 mt-2 w-48 rounded-lg shadow-lg border z-50" :class="darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'">
+                            <div class="py-2">
+                                <button @click="setTheme('light'); showThemes = false" class="w-full text-left px-4 py-2 text-sm transition-colors duration-200 flex items-center" :class="!darkMode ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100')">
+                                    <i class="fas fa-sun mr-3 w-4"></i>Light Theme
+                                </button>
+                                <button @click="setTheme('dark'); showThemes = false" class="w-full text-left px-4 py-2 text-sm transition-colors duration-200 flex items-center" :class="darkMode ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100')">
+                                    <i class="fas fa-moon mr-3 w-4"></i>Dark Theme
+                                </button>
+                                <button @click="setTheme('auto'); showThemes = false" class="w-full text-left px-4 py-2 text-sm transition-colors duration-200 flex items-center" :class="darkMode ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-100'">
+                                    <i class="fas fa-desktop mr-3 w-4"></i>System Default
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <template x-if="!isLoggedIn">
+                        <div class="flex space-x-2">
+                            <button @click="showLogin = true" class="px-4 py-2 text-sm font-medium transition-colors duration-200" :class="darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'" x-text="translate('login')">
+                            </button>
+                            <button class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200" x-text="translate('signUp')">
+                            </button>
+                        </div>
+                    </template>
+                    
+                    <template x-if="isLoggedIn">
+                        <div class="flex items-center space-x-4">
+                            <span class="text-sm transition-colors duration-200" :class="darkMode ? 'text-gray-300' : 'text-gray-700'"><span x-text="translate('welcome')"></span>, <span x-text="user.username"></span></span>
+                            <template x-if="user.role === 'admin'">
+                                <button @click="showAdmin = true" class="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full hover:bg-green-200 transition-colors duration-200" x-text="translate('admin')">
+                                </button>
+                            </template>
+                            <button @click="logout()" class="px-4 py-2 text-sm font-medium transition-colors duration-200" :class="darkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'" x-text="translate('logout')">
+                            </button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </nav>
+        
+        <!-- Mobile Navigation Menu -->
+        <div x-show="showMobileMenu" @click.away="showMobileMenu = false" x-transition class="lg:hidden border-t transition-colors duration-200" :class="darkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-white'">
+            <div class="px-4 py-4 space-y-3">
+                <a href="#" @click="currentSection = 'home'; showMobileMenu = false" :class="currentSection === 'home' ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300' : 'text-gray-700')" class="block py-2 text-sm transition-colors duration-200 text-container" x-text="translate('home')"></a>
+                <a href="#" @click="currentSection = 'articles'; showMobileMenu = false" :class="currentSection === 'articles' ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300' : 'text-gray-700')" class="block py-2 text-sm transition-colors duration-200 text-container" x-text="translate('allNews')"></a>
+                <a href="#" @click="currentSection = 'political'; showMobileMenu = false" :class="currentSection === 'political' ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300' : 'text-gray-700')" class="block py-2 text-sm transition-colors duration-200 text-container">
+                    <i class="fas fa-flag-usa mr-2"></i><span x-text="translate('political')"></span>
+                </a>
+                <a href="#" @click="currentSection = 'economic'; showMobileMenu = false" :class="currentSection === 'economic' ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300' : 'text-gray-700')" class="block py-2 text-sm transition-colors duration-200 text-container">
+                    <i class="fas fa-chart-line mr-2"></i><span x-text="translate('economic')"></span>
+                </a>
+                <a href="#" @click="currentSection = 'crypto'; showMobileMenu = false" :class="currentSection === 'crypto' ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300' : 'text-gray-700')" class="block py-2 text-sm transition-colors duration-200 text-container">
+                    <i class="fab fa-bitcoin mr-2"></i><span x-text="translate('crypto')"></span>
+                </a>
+                <a href="#" @click="currentSection = 'esports'; showMobileMenu = false" :class="currentSection === 'esports' ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300' : 'text-gray-700')" class="block py-2 text-sm transition-colors duration-200 text-container">
+                    <i class="fas fa-gamepad mr-2"></i><span x-text="translate('esports')"></span>
+                </a>
+                <a href="#" @click="currentSection = 'sources'; showMobileMenu = false" :class="currentSection === 'sources' ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300' : 'text-gray-700')" class="block py-2 text-sm transition-colors duration-200 text-container">
+                    <i class="fas fa-newspaper mr-2"></i><span x-text="translate('sources')"></span>
+                </a>
+                <a href="#" @click="currentSection = 'about'; showMobileMenu = false" :class="currentSection === 'about' ? 'text-blue-600 font-semibold' : (darkMode ? 'text-gray-300' : 'text-gray-700')" class="block py-2 text-sm transition-colors duration-200 text-container" x-text="translate('about')"></a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="py-16 transition-colors duration-200" :class="darkMode ? 'bg-gray-800' : 'bg-white'" x-show="currentSection === 'home'">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="hero-responsive font-bold tracking-tight transition-colors duration-200 text-container" :class="darkMode ? 'text-white' : 'text-gray-900'" x-text="translate('heroTitle')">
+            </h1>
+            <p class="mt-6 text-responsive leading-relaxed max-w-2xl mx-auto transition-colors duration-200 text-container" :class="darkMode ? 'text-gray-300' : 'text-gray-600'" x-text="translate('heroSubtitle')">
+            </p>
+            <div class="mt-10 flex flex-wrap items-center justify-center gap-2 sm:gap-3 lg:gap-4 max-w-4xl mx-auto">
+                <button @click="currentSection = 'articles'" class="rounded-md bg-blue-600 px-2 py-1.5 sm:px-3 sm:py-2 lg:px-4 lg:py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-blue-500 btn-text text-container flex-shrink-0" x-text="translate('browseAllNews')">
+                </button>
+                <button @click="currentSection = 'political'" class="rounded-md bg-blue-700 px-2 py-1.5 sm:px-3 sm:py-2 lg:px-4 lg:py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-blue-600 btn-text text-container flex-shrink-0">
+                    <i class="fas fa-flag-usa mr-1"></i><span x-text="translate('politicalNews')"></span>
+                </button>
+                <button @click="currentSection = 'economic'" class="rounded-md bg-green-600 px-2 py-1.5 sm:px-3 sm:py-2 lg:px-4 lg:py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-green-500 btn-text text-container flex-shrink-0">
+                    <i class="fas fa-chart-line mr-1"></i><span x-text="translate('economicNews')"></span>
+                </button>
+                <button @click="currentSection = 'crypto'" class="rounded-md bg-orange-600 px-2 py-1.5 sm:px-3 sm:py-2 lg:px-4 lg:py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-orange-500 btn-text text-container flex-shrink-0">
+                    <i class="fab fa-bitcoin mr-1"></i><span x-text="translate('cryptoNews')"></span>
+                </button>
+                <button @click="currentSection = 'esports'" class="rounded-md bg-purple-600 px-2 py-1.5 sm:px-3 sm:py-2 lg:px-4 lg:py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-purple-500 btn-text text-container flex-shrink-0">
+                    <i class="fas fa-gamepad mr-1"></i><span x-text="translate('esportsNews')"></span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-16 transition-colors duration-200" :class="darkMode ? 'bg-gray-900' : 'bg-gray-50'" x-show="currentSection === 'home'">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="text-center">
+                <h2 class="text-3xl font-bold transition-colors duration-200" :class="darkMode ? 'text-white' : 'text-gray-900'">How Our Journalism Works</h2>
+                <p class="mt-4 text-lg transition-colors duration-200" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Advanced analysis and research methods to deliver unbiased, comprehensive journalism</p>
+            </div>
+            
+            <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="text-center">
+                    <div class="mx-auto h-12 w-12 flex items-center justify-center rounded-lg bg-blue-600 text-white">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h3 class="mt-4 text-lg font-semibold transition-colors duration-200" :class="darkMode ? 'text-white' : 'text-gray-900'">Comprehensive Research</h3>
+                    <p class="mt-2 transition-colors duration-200" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Our editorial team researches multiple sources, identifies bias patterns, and extracts factual information to create comprehensive analysis.</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="mx-auto h-12 w-12 flex items-center justify-center rounded-lg bg-green-600 text-white">
+                        <i class="fas fa-pen-nib"></i>
+                    </div>
+                    <h3 class="mt-4 text-lg font-semibold transition-colors duration-200" :class="darkMode ? 'text-white' : 'text-gray-900'">Professional Journalism</h3>
+                    <p class="mt-2 transition-colors duration-200" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Stories are carefully crafted by our editorial team to remove bias, propaganda, and emotional manipulation while preserving factual accuracy.</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="mx-auto h-12 w-12 flex items-center justify-center rounded-lg bg-purple-600 text-white">
+                        <i class="fas fa-balance-scale"></i>
+                    </div>
+                    <h3 class="mt-4 text-lg font-semibold transition-colors duration-200" :class="darkMode ? 'text-white' : 'text-gray-900'">Balanced Reporting</h3>
+                    <p class="mt-2 transition-colors duration-200" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Each article presents multiple perspectives fairly and objectively, helping you form well-informed opinions based on facts.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Articles Section -->
+    <section id="articles" class="py-16 transition-colors duration-200" :class="darkMode ? 'bg-gray-800' : 'bg-white'" x-show="currentSection === 'home' || currentSection === 'articles'">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="title-responsive font-bold transition-colors duration-200 text-container" :class="darkMode ? 'text-white' : 'text-gray-900'" x-text="translate('latestNews')"></h2>
+                <p class="mt-4 text-responsive transition-colors duration-200 text-container" :class="darkMode ? 'text-gray-300' : 'text-gray-600'" x-text="translate('newsSubtitle')"></p>
+                
+                <!-- Real-time indicator -->
+                <div class="mt-4 inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
+                    <div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                    Connected to real-time updates
+                </div>
+            </div>
+            
+            <!-- Search and Filters -->
+            <div class="mb-8">
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <div class="flex-1">
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" 
+                                   x-model="searchQuery" 
+                                   @input="filterArticles()"
+                                   placeholder="Search articles..." 
+                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                    </div>
+                    <button @click="showFilters = !showFilters" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center">
+                        <i class="fas fa-filter mr-2"></i> Filters
+                    </button>
+                </div>
+                
+                <!-- Filter Panel -->
+                <div x-show="showFilters" x-transition class="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Source</label>
+                            <select x-model="selectedSource" @change="filterArticles()" class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500">
+                                <option value="">All Sources</option>
+                                <option value="BBC News">BBC News</option>
+                                <option value="Reuters">Reuters</option>
+                                <option value="CNN">CNN</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Bias Level</label>
+                            <select x-model="selectedBias" @change="filterArticles()" class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500">
+                                <option value="">All Bias Levels</option>
+                                <option value="low">Low Bias (0-30%)</option>
+                                <option value="medium">Medium Bias (30-60%)</option>
+                                <option value="high">High Bias (60%+)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                            <select x-model="selectedCategory" @change="filterArticles()" class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500">
+                                <option value="">All Categories</option>
+                                <option value="Politics">Politics</option>
+                                <option value="Technology">Technology</option>
+                                <option value="Health">Health</option>
+                                <option value="Environment">Environment</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Articles Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <template x-for="article in filteredArticles" :key="article.id">
+                    <div class="article-card rounded-lg shadow-md overflow-hidden transition-all duration-300 cursor-pointer" :class="darkMode ? 'bg-gray-700 shadow-gray-900/20' : 'bg-white'" 
+                         @click="showArticleDetail(article)">
+                        <div class="h-48 bg-gray-200 overflow-hidden">
+                            <img :src="article.image" :alt="article.title" class="w-full h-full object-cover">
+                        </div>
+                        <div class="card-body p-4 lg:p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                                      x-text="article.source"></span>
+                                <div class="flex items-center space-x-1">
+                                    <div class="bias-indicator w-3 h-3 rounded-full"
+                                         :class="getBiasColor(article.bias_score)"></div>
+                                    <span class="text-xs text-gray-500" x-text="getBiasLabel(article.bias_score)"></span>
+                                </div>
+                            </div>
+                            <h3 class="title-responsive font-semibold mb-2 transition-colors duration-200 text-container card-text card-title prevent-overflow" :class="darkMode ? 'text-white' : 'text-gray-900'" x-text="article.title"></h3>
+                            <p class="text-responsive mb-4 transition-colors duration-200 text-container card-text card-summary prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'" x-text="article.summary"></p>
+                            <div class="flex items-center justify-between text-xs text-gray-500">
+                                <span x-text="formatDate(article.published_at)"></span>
+                                <span>Bias: <span x-text="Math.round(article.bias_score * 100)"></span>%</span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </section>
+
+    <!-- Political News Section -->
+    <section id="political-news" class="py-16 transition-colors duration-200" :class="darkMode ? 'bg-gray-800' : 'bg-white'" x-show="currentSection === 'political'">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold flex items-center justify-center transition-colors duration-200" :class="darkMode ? 'text-white' : 'text-gray-900'">
+                    <i class="fas fa-flag-usa text-blue-600 mr-3"></i>
+                    Political News & Government
+                </h2>
+                <p class="mt-4 text-lg transition-colors duration-200" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Comprehensive coverage of political developments, policy analysis, and government initiatives</p>
+                
+                <!-- Political indicator -->
+                <div class="mt-4 inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                    <div class="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse"></div>
+                    Latest political developments
+                </div>
+            </div>
+            
+            <!-- Political Articles Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <template x-for="article in politicalArticles" :key="'political-' + article.id">
+                    <article class="article-card rounded-lg shadow-md overflow-hidden border transition-all duration-300 hover:shadow-lg cursor-pointer" :class="darkMode ? 'bg-gray-700 border-gray-600 shadow-gray-900/20' : 'bg-white border-gray-200'" @click="showArticleDetail(article)">
+                        <img :src="article.image" :alt="article.title" class="w-full h-48 object-cover">
+                        <div class="p-6">
+                            <div class="flex items-center mb-2">
+                                <span class="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full font-medium">Political</span>
+                                <div class="ml-auto flex items-center">
+                                    <div :class="getBiasColor(article.bias_score)" class="w-3 h-3 rounded-full mr-1"></div>
+                                    <span class="text-xs text-gray-500" x-text="getBiasLabel(article.bias_score)"></span>
+                                </div>
+                            </div>
+                            <h3 class="title-responsive font-semibold mb-2 transition-colors duration-200 text-container card-text card-title prevent-overflow" :class="darkMode ? 'text-white' : 'text-gray-900'" x-text="article.title"></h3>
+                            <p class="text-responsive mb-4 transition-colors duration-200 text-container card-text card-summary prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'" x-text="article.summary"></p>
+                            <div class="flex items-center justify-between text-xs text-gray-500">
+                                <span x-text="article.source"></span>
+                                <span x-text="formatDate(article.published_at)"></span>
+                            </div>
+                        </div>
+                    </article>
+                </template>
+            </div>
+        </div>
+    </section>
+
+    <!-- Economic News Section -->
+    <section id="economic-news" class="py-16 transition-colors duration-200" :class="darkMode ? 'bg-gray-800' : 'bg-white'" x-show="currentSection === 'economic'">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold flex items-center justify-center transition-colors duration-200" :class="darkMode ? 'text-white' : 'text-gray-900'">
+                    <i class="fas fa-chart-line text-green-600 mr-3"></i>
+                    Economic News & Business
+                </h2>
+                <p class="mt-4 text-lg transition-colors duration-200" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">In-depth economic analysis, market trends, and business developments</p>
+                
+                <!-- Economic indicator -->
+                <div class="mt-4 inline-flex items-center px-3 py-1 rounded-full text-sm bg-green-100 text-green-800">
+                    <div class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                    Live economic insights
+                </div>
+            </div>
+            
+            <!-- Economic Articles Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <template x-for="article in economicArticles" :key="'economic-' + article.id">
+                    <article class="article-card rounded-lg shadow-md overflow-hidden border transition-all duration-300 hover:shadow-lg cursor-pointer" :class="darkMode ? 'bg-gray-700 border-gray-600 shadow-gray-900/20' : 'bg-white border-gray-200'" @click="showArticleDetail(article)">
+                        <img :src="article.image" :alt="article.title" class="w-full h-48 object-cover">
+                        <div class="p-6">
+                            <div class="flex items-center mb-2">
+                                <span class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full font-medium">Economic</span>
+                                <div class="ml-auto flex items-center">
+                                    <div :class="getBiasColor(article.bias_score)" class="w-3 h-3 rounded-full mr-1"></div>
+                                    <span class="text-xs text-gray-500" x-text="getBiasLabel(article.bias_score)"></span>
+                                </div>
+                            </div>
+                            <h3 class="title-responsive font-semibold mb-2 transition-colors duration-200 text-container card-text card-title prevent-overflow" :class="darkMode ? 'text-white' : 'text-gray-900'" x-text="article.title"></h3>
+                            <p class="text-responsive mb-4 transition-colors duration-200 text-container card-text card-summary prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'" x-text="article.summary"></p>
+                            <div class="flex items-center justify-between text-xs text-gray-500">
+                                <span x-text="article.source"></span>
+                                <span x-text="formatDate(article.published_at)"></span>
+                            </div>
+                        </div>
+                    </article>
+                </template>
+            </div>
+        </div>
+    </section>
+
+    <!-- Crypto News Section -->
+    <section id="crypto-news" class="py-16 transition-colors duration-200" :class="darkMode ? 'bg-gray-800' : 'bg-white'" x-show="currentSection === 'crypto'">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold flex items-center justify-center transition-colors duration-200" :class="darkMode ? 'text-white' : 'text-gray-900'">
+                    <i class="fab fa-bitcoin text-orange-500 mr-3"></i>
+                    Cryptocurrency & Blockchain News
+                </h2>
+                <p class="mt-4 text-lg transition-colors duration-200" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Comprehensive cryptocurrency market updates, blockchain technology developments, and digital asset insights</p>
+                
+                <!-- Crypto market indicator -->
+                <div class="mt-4 inline-flex items-center px-3 py-1 rounded-full text-sm bg-orange-100 text-orange-800">
+                    <div class="w-2 h-2 bg-orange-500 rounded-full mr-2 animate-pulse"></div>
+                    Live crypto market analysis
+                </div>
+            </div>
+            
+            <!-- Crypto Search and Filters -->
+            <div class="mb-8">
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <div class="flex-1">
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" 
+                                   x-model="cryptoSearchQuery" 
+                                   @input="filterCryptoArticles()"
+                                   placeholder="Search crypto news..." 
+                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                        </div>
+                    </div>
+                    <button @click="showCryptoFilters = !showCryptoFilters" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center">
+                        <i class="fas fa-filter mr-2"></i> Crypto Filters
+                    </button>
+                </div>
+                
+                <!-- Crypto Filter Panel -->
+                <div x-show="showCryptoFilters" x-transition class="mt-4 p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg border border-orange-200">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Cryptocurrency</label>
+                            <select x-model="selectedCrypto" @change="filterCryptoArticles()" class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-orange-500">
+                                <option value="">All Cryptocurrencies</option>
+                                <option value="Bitcoin">Bitcoin (BTC)</option>
+                                <option value="Ethereum">Ethereum (ETH)</option>
+                                <option value="DeFi">DeFi Projects</option>
+                                <option value="NFT">NFTs & Digital Assets</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">News Type</label>
+                            <select x-model="selectedCryptoType" @change="filterCryptoArticles()" class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-orange-500">
+                                <option value="">All Types</option>
+                                <option value="Market Analysis">Market Analysis</option>
+                                <option value="Technology">Technology Updates</option>
+                                <option value="Regulation">Regulation News</option>
+                                <option value="Adoption">Adoption & Partnerships</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Impact Level</label>
+                            <select x-model="selectedCryptoImpact" @change="filterCryptoArticles()" class="w-full rounded-lg border-gray-300 focus:ring-2 focus:ring-orange-500">
+                                <option value="">All Impact Levels</option>
+                                <option value="high">High Impact</option>
+                                <option value="medium">Medium Impact</option>
+                                <option value="low">Low Impact</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Crypto Articles Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <template x-for="article in filteredCryptoArticles" :key="'crypto-' + article.id">
+                    <div class="article-card bg-gradient-to-br from-white to-orange-50 rounded-lg shadow-md overflow-hidden transition-all duration-300 cursor-pointer border border-orange-100" 
+                         @click="showArticleDetail(article)">
+                        <div class="h-48 bg-gradient-to-br from-orange-400 to-yellow-500 overflow-hidden relative">
+                            <img :src="article.image" :alt="article.title" class="w-full h-full object-cover opacity-90">
+                            <div class="absolute top-2 right-2">
+                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-500 text-white">
+                                    <i class="fab fa-bitcoin mr-1"></i> CRYPTO
+                                </span>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800"
+                                      x-text="article.source"></span>
+                                <div class="flex items-center space-x-1">
+                                    <div class="bias-indicator w-3 h-3 rounded-full"
+                                         :class="getBiasColor(article.bias_score)"></div>
+                                    <span class="text-xs text-gray-500" x-text="getBiasLabel(article.bias_score)"></span>
+                                </div>
+                            </div>
+                            <h3 class="title-responsive font-semibold mb-2 transition-colors duration-200 text-container card-text card-title prevent-overflow" :class="darkMode ? 'text-white' : 'text-gray-900'" x-text="article.title"></h3>
+                            <p class="text-responsive mb-4 transition-colors duration-200 text-container card-text card-summary prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'" x-text="article.summary"></p>
+                            <div class="flex items-center justify-between text-xs text-gray-500">
+                                <span x-text="formatDate(article.published_at)"></span>
+                                <span class="flex items-center">
+                                    <i class="fas fa-chart-line mr-1"></i>
+                                    <span x-text="article.crypto_type || 'Analysis'"></span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+            
+            <!-- Crypto Market Summary -->
+            <div class="mt-12 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-lg p-6 border border-orange-200">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-chart-line text-orange-500 mr-2"></i>
+                    Market Overview (Demo Data)
+                </h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-gray-900">$43,250</div>
+                        <div class="text-sm text-gray-600">Bitcoin (BTC)</div>
+                        <div class="text-xs text-green-600">+2.3%</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-gray-900">$2,650</div>
+                        <div class="text-sm text-gray-600">Ethereum (ETH)</div>
+                        <div class="text-xs text-green-600">+1.8%</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-gray-900">$1.65T</div>
+                        <div class="text-sm text-gray-600">Total Market Cap</div>
+                        <div class="text-xs text-red-600">-0.5%</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-gray-900">52.1%</div>
+                        <div class="text-sm text-gray-600">BTC Dominance</div>
+                        <div class="text-xs text-gray-600">stable</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Esports News Section -->
+    <section id="esports-news" class="py-16 transition-colors duration-200" :class="darkMode ? 'bg-gray-800' : 'bg-white'" x-show="currentSection === 'esports'">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold flex items-center justify-center transition-colors duration-200" :class="darkMode ? 'text-white' : 'text-gray-900'">
+                    <i class="fas fa-gamepad text-purple-600 mr-3"></i>
+                    <span x-text="translate('esportsTitle')"></span>
+                </h2>
+                <p class="mt-4 text-lg transition-colors duration-200" :class="darkMode ? 'text-gray-300' : 'text-gray-600'" x-text="translate('esportsSubtitle')"></p>
+                
+                <!-- Esports indicator -->
+                <div class="mt-4 inline-flex items-center px-3 py-1 rounded-full text-sm bg-purple-100 text-purple-800">
+                    <div class="w-2 h-2 bg-purple-500 rounded-full mr-2 animate-pulse"></div>
+                    <span x-text="translate('live')"></span> esports coverage
+                </div>
+            </div>
+            
+            <!-- Esports Articles Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <template x-for="article in esportsArticles" :key="'esports-' + article.id">
+                    <article class="article-card rounded-lg shadow-md overflow-hidden border transition-all duration-300 hover:shadow-lg cursor-pointer" :class="darkMode ? 'bg-gray-700 border-gray-600 shadow-gray-900/20' : 'bg-white border-gray-200'" @click="showArticleDetail(article)">
+                        <img :src="article.image" :alt="article.title" class="w-full h-48 object-cover">
+                        <div class="p-6">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded-full font-medium">Esports</span>
+                                    <span class="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full" x-text="article.game"></span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div :class="getBiasColor(article.bias_score)" class="w-3 h-3 rounded-full mr-1"></div>
+                                    <span class="text-xs transition-colors duration-200" :class="darkMode ? 'text-gray-400' : 'text-gray-500'" x-text="getBiasLabel(article.bias_score)"></span>
+                                </div>
+                            </div>
+                            <h3 class="title-responsive font-semibold mb-2 transition-colors duration-200 text-container card-text card-title prevent-overflow" :class="darkMode ? 'text-white' : 'text-gray-900'" x-text="article.title"></h3>
+                            <p class="text-responsive mb-4 transition-colors duration-200 text-container card-text card-summary prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'" x-text="article.summary"></p>
+                            <div class="flex items-center justify-between text-xs transition-colors duration-200" :class="darkMode ? 'text-gray-400' : 'text-gray-500'">
+                                <span x-text="article.source"></span>
+                                <span x-text="formatDate(article.published_at)"></span>
+                            </div>
+                        </div>
+                    </article>
+                </template>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sources Section -->
+    <section id="sources" class="py-16 transition-colors duration-200" :class="darkMode ? 'bg-gray-800' : 'bg-white'" x-show="currentSection === 'sources'">
+        <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="hero-responsive font-bold transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-white' : 'text-gray-900'">
+                    <i class="fas fa-newspaper text-blue-600 mr-3"></i>
+                    How We Select and Process News
+                </h2>
+                <p class="title-responsive transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">
+                    Our comprehensive approach to news gathering, verification, and editorial processing
+                </p>
+            </div>
+            
+            <div class="space-y-12">
+                <!-- News Selection Process -->
+                <div class="rounded-lg p-8 transition-colors duration-200" :class="darkMode ? 'bg-gray-700 border border-gray-600' : 'bg-blue-50 border border-blue-200'">
+                    <h3 class="title-responsive font-semibold mb-6 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-white' : 'text-gray-900'">
+                        <i class="fas fa-search text-blue-600 mr-3"></i>
+                        News Source Selection Criteria
+                    </h3>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="text-responsive font-semibold mb-3 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-blue-400' : 'text-blue-700'">Primary Sources</h4>
+                            <ul class="space-y-2 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Government press releases and official statements</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Corporate earnings reports and SEC filings</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Academic research and peer-reviewed studies</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Court documents and legal proceedings</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>International organization reports (UN, WHO, etc.)</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="text-responsive font-semibold mb-3 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-blue-400' : 'text-blue-700'">Media Sources</h4>
+                            <ul class="space-y-2 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Established news agencies (Reuters, AP, Bloomberg)</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Major newspapers and digital publications</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Specialized industry publications</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>International news sources</li>
+                                <li><i class="fas fa-check text-green-500 mr-2"></i>Local news outlets for regional coverage</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Editorial Process -->
+                <div class="rounded-lg p-8 transition-colors duration-200" :class="darkMode ? 'bg-gray-700 border border-gray-600' : 'bg-green-50 border border-green-200'">
+                    <h3 class="title-responsive font-semibold mb-6 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-white' : 'text-gray-900'">
+                        <i class="fas fa-cogs text-green-600 mr-3"></i>
+                        Our Editorial Process
+                    </h3>
+                    <div class="space-y-6">
+                        <div class="flex items-start space-x-4">
+                            <div class="flex-shrink-0 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">1</div>
+                            <div>
+                                <h4 class="text-responsive font-semibold mb-2 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-white' : 'text-gray-900'">Source Aggregation</h4>
+                                <p class="text-responsive transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">We continuously monitor over 500 credible news sources, government agencies, and official channels to ensure comprehensive coverage of breaking news and developing stories.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start space-x-4">
+                            <div class="flex-shrink-0 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">2</div>
+                            <div>
+                                <h4 class="text-responsive font-semibold mb-2 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-white' : 'text-gray-900'">Cross-Reference Verification</h4>
+                                <p class="text-responsive transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Every claim and fact is verified across multiple independent sources. We require minimum three-source confirmation for breaking news and controversial topics.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start space-x-4">
+                            <div class="flex-shrink-0 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">3</div>
+                            <div>
+                                <h4 class="text-responsive font-semibold mb-2 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-white' : 'text-gray-900'">Bias Analysis & Removal</h4>
+                                <p class="text-responsive transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Our editorial AI analyzes language patterns, emotional tone, and political leanings to identify and remove bias while preserving factual content and context.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start space-x-4">
+                            <div class="flex-shrink-0 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">4</div>
+                            <div>
+                                <h4 class="text-responsive font-semibold mb-2 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-white' : 'text-gray-900'">Professional Rewriting</h4>
+                                <p class="text-responsive transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Stories are rewritten using professional journalism standards, maintaining accuracy while presenting information in clear, accessible language without sensationalism.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start space-x-4">
+                            <div class="flex-shrink-0 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold">5</div>
+                            <div>
+                                <h4 class="text-responsive font-semibold mb-2 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-white' : 'text-gray-900'">Editorial Review</h4>
+                                <p class="text-responsive transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Human editors perform final quality checks, ensuring accuracy, readability, and adherence to journalistic ethics before publication.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quality Standards -->
+                <div class="rounded-lg p-8 transition-colors duration-200" :class="darkMode ? 'bg-gray-700 border border-gray-600' : 'bg-purple-50 border border-purple-200'">
+                    <h3 class="title-responsive font-semibold mb-6 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-white' : 'text-gray-900'">
+                        <i class="fas fa-award text-purple-600 mr-3"></i>
+                        Quality Standards & Metrics
+                    </h3>
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div>
+                            <h4 class="text-responsive font-semibold mb-4 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-purple-400' : 'text-purple-700'">What We Measure</h4>
+                            <div class="space-y-3">
+                                <div class="flex items-center">
+                                    <div class="w-4 h-4 bg-purple-600 rounded-full mr-3"></div>
+                                    <span class="text-responsive transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Factual accuracy percentage</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-4 h-4 bg-purple-600 rounded-full mr-3"></div>
+                                    <span class="text-responsive transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Political bias detection score</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-4 h-4 bg-purple-600 rounded-full mr-3"></div>
+                                    <span class="text-responsive transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Emotional tone analysis</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <div class="w-4 h-4 bg-purple-600 rounded-full mr-3"></div>
+                                    <span class="text-responsive transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Source diversity index</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="text-responsive font-semibold mb-4 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-purple-400' : 'text-purple-700'">Our Commitment</h4>
+                            <div class="space-y-3">
+                                <div class="flex items-center">
+                                    <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                                    <span class="text-responsive transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">95%+ factual accuracy target</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                                    <span class="text-responsive transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Low bias score (under 30%)</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                                    <span class="text-responsive transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Balanced perspective coverage</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-check-circle text-green-500 mr-3"></i>
+                                    <span class="text-responsive transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Transparent methodology</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About/Methodology Section -->
+    <section id="about" class="py-16 transition-colors duration-200" :class="darkMode ? 'bg-gray-800' : 'bg-white'" x-show="currentSection === 'about'">
+        <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12">
+                <h2 class="hero-responsive font-bold transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-white' : 'text-gray-900'">About Heart of News</h2>
+                <p class="title-responsive transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">Understanding our methodology and commitment to unbiased journalism</p>
+            </div>
+            
+            <div class="prose prose-lg max-w-none">
+                <h3 class="title-responsive font-semibold mb-4 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-white' : 'text-gray-900'">Our Mission</h3>
+                <p class="text-responsive mb-6 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">
+                    Heart of News is dedicated to delivering unbiased, factual journalism in an era of increasing media polarization. Our goal is to provide readers with balanced perspectives on current events without the influence of political bias, sensationalism, or propaganda.
+                </p>
+                
+                <h3 class="title-responsive font-semibold mb-4 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-white' : 'text-gray-900'">Editorial Standards</h3>
+                <p class="text-responsive mb-6 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">
+                    Every article published on Heart of News undergoes rigorous fact-checking and editorial review. Our team maintains strict standards for accuracy, fairness, and objectivity in all our reporting.
+                </p>
+                
+                <h3 class="title-responsive font-semibold mb-4 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-white' : 'text-gray-900'">Our Methodology</h3>
+                <div class="rounded-lg p-6 mb-6 transition-colors duration-200" :class="darkMode ? 'bg-gray-700' : 'bg-gray-50'">
+                    <h4 class="text-responsive font-semibold mb-3 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-white' : 'text-gray-900'">Advanced Editorial Process</h4>
+                    <p class="text-responsive mb-4 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">
+                        Heart of News employs cutting-edge artificial intelligence technology as part of our editorial process to ensure comprehensive, unbiased reporting:
+                    </p>
+                    <ul class="space-y-2 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">
+                        <li><strong>Multi-Source Analysis:</strong> Our AI systems analyze news from hundreds of sources simultaneously to identify common facts and varying perspectives.</li>
+                        <li><strong>Bias Detection:</strong> Advanced algorithms detect political bias, emotional language, and propaganda techniques in source material.</li>
+                        <li><strong>Fact Synthesis:</strong> Information is cross-referenced and verified across multiple credible sources before publication.</li>
+                        <li><strong>Neutral Rewriting:</strong> Our AI editorial system rewrites stories to remove bias while preserving factual accuracy and context.</li>
+                        <li><strong>Human Oversight:</strong> All AI-processed content undergoes final review by experienced human editors.</li>
+                    </ul>
+                </div>
+                
+                <h3 class="title-responsive font-semibold mb-4 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-white' : 'text-gray-900'">Transparency</h3>
+                <p class="text-responsive mb-6 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">
+                    We believe in complete transparency about our methods. While our front-facing content presents traditional journalism, our backend processes utilize advanced AI technology to ensure objectivity and comprehensive coverage that would be impossible through conventional means alone.
+                </p>
+                
+                <h3 class="title-responsive font-semibold mb-4 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-white' : 'text-gray-900'">Bias Scoring System</h3>
+                <p class="text-responsive mb-4 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">
+                    Each article includes a bias analysis that measures:
+                </p>
+                <ul class="space-y-2 mb-6 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">
+                    <li><strong>Political Bias:</strong> Measured on a scale from left-leaning to right-leaning</li>
+                    <li><strong>Emotional Tone:</strong> Detection of sensationalism and emotional manipulation</li>
+                    <li><strong>Overall Objectivity:</strong> Composite score indicating factual vs. opinion-based content</li>
+                    <li><strong>Propaganda Techniques:</strong> Identification of common propaganda methods</li>
+                </ul>
+                
+                <h3 class="title-responsive font-semibold mb-4 transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-white' : 'text-gray-900'">Contact Information</h3>
+                <div class="rounded-lg p-6 transition-colors duration-200" :class="darkMode ? 'bg-gray-700' : 'bg-blue-50'">
+                    <p class="text-responsive transition-colors duration-200 text-container prevent-overflow" :class="darkMode ? 'text-gray-300' : 'text-gray-600'">
+                        <strong>Editorial Team:</strong> editorial@heartofnews.com<br>
+                        <strong>Technical Inquiries:</strong> tech@heartofnews.com<br>
+                        <strong>General Contact:</strong> info@heartofnews.com
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Login Modal -->
+    <div x-show="showLogin" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-responsive font-medium text-gray-900 text-container prevent-overflow">Sign in to Heart of News</h3>
+                    <button @click="showLogin = false" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <form @submit.prevent="login()">
+                    <div class="mb-4">
+                        <label class="block text-responsive font-medium text-gray-700 mb-2 text-container prevent-overflow">Email</label>
+                        <input type="email" x-model="loginForm.email" required 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label class="block text-responsive font-medium text-gray-700 mb-2 text-container prevent-overflow">Password</label>
+                        <input type="password" x-model="loginForm.password" required 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+                    
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="text-responsive text-gray-600 text-container prevent-overflow">
+                            <strong>Demo Credentials:</strong><br>
+                            Admin: admin@heartofnews.local / admin123<br>
+                            User: user@heartofnews.local / user123
+                        </div>
+                    </div>
+                    
+                    <button type="submit" :disabled="isLoggingIn" 
+                            class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-responsive">
+                        <span x-show="!isLoggingIn">Sign In</span>
+                        <span x-show="isLoggingIn">Signing in...</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Article Detail Modal -->
+    <div x-show="selectedArticle" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-10 mx-auto p-5 border max-w-4xl shadow-lg rounded-md bg-white m-4">
+            <template x-if="selectedArticle">
+                <div>
+                    <div class="flex items-center justify-between mb-4">
+                        <button @click="selectedArticle = null" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-arrow-left mr-2"></i> Back to Articles
+                        </button>
+                        <button @click="selectedArticle = null" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <h1 class="hero-responsive font-bold text-gray-900 mb-4 text-container prevent-overflow" x-text="selectedArticle.title"></h1>
+                    
+                    <div class="flex items-center space-x-4 mb-6 text-sm text-gray-600">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800" x-text="selectedArticle.source"></span>
+                        <span x-text="formatDate(selectedArticle.published_at)"></span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            <i class="fas fa-check-circle mr-1"></i> Fact-Checked & Verified
+                        </span>
+                    </div>
+                    
+                    <img :src="selectedArticle.image" :alt="selectedArticle.title" class="w-full h-64 object-cover rounded-lg mb-6">
+                    
+                    <!-- Bias Analysis -->
+                    <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                        <h3 class="text-lg font-semibold mb-4 flex items-center">
+                            <i class="fas fa-chart-bar mr-2"></i> Bias Analysis
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-sm font-medium">Political Bias</span>
+                                    <span class="text-sm" x-text="getBiasLabel(selectedArticle.bias_score)"></span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="h-2 rounded-full" 
+                                         :class="getBiasColor(selectedArticle.bias_score)"
+                                         :style="`width: ${Math.abs(selectedArticle.political_bias || 0) * 100}%`"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-sm font-medium">Emotional Tone</span>
+                                    <span class="text-sm" x-text="getEmotionalTone(selectedArticle.emotional_tone || 0.2)"></span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-yellow-500 h-2 rounded-full" 
+                                         :style="`width: ${(selectedArticle.emotional_tone || 0.2) * 100}%`"></div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div class="flex justify-between mb-2">
+                                    <span class="text-sm font-medium">Overall Bias Score</span>
+                                    <span class="text-sm" x-text="`${Math.round(selectedArticle.bias_score * 100)}%`"></span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-purple-500 h-2 rounded-full" 
+                                         :style="`width: ${selectedArticle.bias_score * 100}%`"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="prose max-w-none">
+                        <div class="text-lg italic border-l-4 border-blue-500 pl-4 py-2 mb-6 bg-blue-50">
+                            <span x-text="selectedArticle.summary"></span>
+                        </div>
+                        <div x-html="selectedArticle.content"></div>
+                        
+                        <!-- Editorial Note -->
+                        <div class="mt-8 pt-4 border-t border-gray-200">
+                            <div class="bg-gray-50 rounded-lg p-4">
+                                <p class="text-sm text-gray-600">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    <strong>Editorial Note:</strong> This article has been researched and crafted by our editorial team to provide a balanced, bias-reduced perspective while maintaining factual accuracy. Multiple sources were consulted and cross-referenced during this process.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- Admin Panel Modal -->
+    <div x-show="showAdmin" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-10 mx-auto p-5 border max-w-6xl shadow-lg rounded-md bg-white m-4">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-2xl font-bold text-gray-900">Admin Dashboard</h3>
+                <button @click="showAdmin = false" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-blue-50 rounded-lg p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-blue-500 text-white">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Total Users</p>
+                            <p class="text-2xl font-semibold text-gray-900">1,234</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-green-50 rounded-lg p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-green-500 text-white">
+                            <i class="fas fa-newspaper"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Articles</p>
+                            <p class="text-2xl font-semibold text-gray-900">5,678</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-purple-50 rounded-lg p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-purple-500 text-white">
+                            <i class="fas fa-globe"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Sources</p>
+                            <p class="text-2xl font-semibold text-gray-900">42</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-yellow-50 rounded-lg p-6">
+                    <div class="flex items-center">
+                        <div class="p-3 rounded-full bg-yellow-500 text-white">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-600">Avg Bias</p>
+                            <p class="text-2xl font-semibold text-gray-900">32%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Logo Management -->
+            <div class="bg-white border rounded-lg p-6 mb-6">
+                <h4 class="text-lg font-semibold mb-4 flex items-center">
+                    <i class="fas fa-image mr-2 text-blue-500"></i>
+                    Logo Management
+                </h4>
+                <div class="flex items-center space-x-6">
+                    <div class="flex items-center">
+                        <span class="text-sm text-gray-600 mr-3">Current Logo:</span>
+                        <template x-if="customLogo">
+                            <div class="flex items-center space-x-3">
+                                <img :src="customLogo" alt="Current Logo" class="h-12 w-12 object-contain border rounded">
+                                <button @click="customLogo = null" class="text-red-500 hover:text-red-700 text-sm">
+                                    <i class="fas fa-trash mr-1"></i>Remove
+                                </button>
+                            </div>
+                        </template>
+                        <template x-if="!customLogo">
+                            <div class="h-12 w-12 bg-blue-600 rounded-full flex items-center justify-center">
+                                <span class="text-white font-bold">H</span>
+                            </div>
+                        </template>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <input type="file" 
+                               @change="handleLogoUpload($event)" 
+                               accept="image/*" 
+                               class="hidden" 
+                               id="logoUpload">
+                        <button @click="document.getElementById('logoUpload').click()" 
+                                class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+                            <i class="fas fa-upload mr-2"></i>Upload New Logo
+                        </button>
+                        <span class="text-xs text-gray-500">PNG, JPG, GIF up to 2MB</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white border rounded-lg p-6">
+                    <h4 class="text-lg font-semibold mb-4">Recent Articles</h4>
+                    <div class="space-y-3">
+                        <template x-for="article in articles.slice(0, 3)" :key="'admin-' + article.id">
+                            <div class="flex justify-between items-center py-2 border-b">
+                                <div>
+                                    <p class="font-medium text-sm" x-text="article.title.substring(0, 40) + '...'"></p>
+                                    <p class="text-xs text-gray-500" x-text="article.source"></p>
+                                </div>
+                                <span class="text-xs px-2 py-1 bg-gray-100 rounded" x-text="`${Math.round(article.bias_score * 100)}%`"></span>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+                
+                <div class="bg-white border rounded-lg p-6">
+                    <h4 class="text-lg font-semibold mb-4">System Status</h4>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">API Server</span>
+                            <span class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">Online</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">Database</span>
+                            <span class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">Healthy</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">Bias Detection AI</span>
+                            <span class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">Active</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm">News Scraper</span>
+                            <span class="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">Running</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function heartOfNews() {
+            return {
+                // State
+                isLoggedIn: false,
+                user: null,
+                showLogin: false,
+                showAdmin: false,
+                showFilters: false,
+                showCryptoFilters: false,
+                selectedArticle: null,
+                isLoggingIn: false,
+                darkMode: false,
+                themePreference: 'auto', // 'light', 'dark', 'auto'
+                currentSection: 'home',
+                customLogo: null,
+                showLogoUpload: false,
+                currentLanguage: 'en',
+                showLanguageSelector: false,
+                showMobileMenu: false,
+                
+                // Initialize
+                init() {
+                    this.initializeTheme();
+                    this.initializeLanguage();
+                },
+                
+                // Form data
+                loginForm: {
+                    email: '',
+                    password: ''
+                },
+                
+                // Filters
+                searchQuery: '',
+                selectedSource: '',
+                selectedBias: '',
+                selectedCategory: '',
+                
+                // Crypto Filters
+                cryptoSearchQuery: '',
+                selectedCrypto: '',
+                selectedCryptoType: '',
+                selectedCryptoImpact: '',
+                
+                // Data
+                articles: [
+                    {
+                        id: 1,
+                        title: 'World Leaders Unite on Ambitious Climate Action Framework',
+                        summary: 'An unprecedented coalition of 195 nations has committed to a comprehensive climate strategy that prioritizes renewable energy transition and supports developing economies in achieving carbon neutrality.',
+                        content: '<p>In what many are calling the most significant environmental accord in recent history, representatives from nearly every nation on Earth have reached consensus on a transformative climate action framework. The agreement, finalized after intensive negotiations, establishes concrete pathways for reducing global carbon emissions over the next decade.</p><p>Central to the framework are substantial commitments to renewable energy infrastructure, innovative carbon pricing strategies, and a comprehensive support system for developing nations as they transition away from fossil fuel dependency. The accord specifically allocates $100 billion annually to assist emerging economies in building sustainable energy systems.</p><p>Environmental advocates have welcomed the agreement as a crucial turning point in global climate policy, though some analysts suggest that even more aggressive targets may be necessary to address the urgency of climate change. The framework will undergo regular review processes to ensure nations remain on track with their commitments.</p><p>Implementation begins immediately, with participating countries required to submit detailed action plans within 90 days. Early indicators suggest strong political will across diverse regions, marking a rare moment of international cooperation on environmental issues.</p>',
+                        source: 'Heart of News Editorial',
+                        published_at: '2024-05-24T10:00:00Z',
+                        image: 'https://images.unsplash.com/photo-1569163139394-de44cb2e0dee?w=800&h=400&fit=crop',
+                        bias_score: 0.15,
+                        political_bias: 0.1,
+                        emotional_tone: 0.2,
+                        categories: ['Environment', 'Politics'],
+                        url: null
+                    },
+                    {
+                        id: 2,
+                        title: 'European Union Implements Comprehensive Digital Platform Oversight',
+                        summary: 'New regulatory framework introduces unprecedented oversight measures for technology platforms, focusing on user privacy protection, market competition, and content responsibility standards.',
+                        content: '<p>European regulators have unveiled an extensive regulatory framework designed to reshape how major technology platforms operate within the European Union. The legislation introduces stringent oversight mechanisms that will fundamentally alter the digital landscape for companies serving European users.</p><p>The new rules mandate comprehensive risk assessments for platforms serving more than 45 million European users, requiring external auditing processes and transparent reporting on content moderation practices. Companies must also demonstrate compliance with enhanced data protection standards and provide users with greater control over their personal information.</p><p>Market competition measures within the framework aim to prevent anti-competitive practices by requiring platforms to allow third-party services and ensuring fair access to platform features for businesses of all sizes. Technology companies will have 18 months to implement the required changes, with significant financial penalties for non-compliance.</p><p>Industry representatives have expressed concerns about implementation costs and timeline feasibility, while consumer advocacy groups have praised the regulations as necessary protections for digital rights. The framework is expected to serve as a model for similar legislation in other regions.</p>',
+                        source: 'Heart of News Editorial',
+                        published_at: '2024-05-24T08:30:00Z',
+                        image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=400&fit=crop',
+                        bias_score: 0.18,
+                        political_bias: -0.05,
+                        emotional_tone: 0.3,
+                        categories: ['Technology', 'Politics'],
+                        url: null
+                    },
+                    {
+                        id: 3,
+                        title: 'Promising Alzheimer\'s Treatment Advances Through Clinical Trials',
+                        summary: 'Medical researchers report encouraging results from trials of an innovative therapy that targets brain protein deposits associated with Alzheimer\'s disease, offering new hope for patients and families.',
+                        content: '<p>A groundbreaking therapeutic approach for Alzheimer\'s disease has demonstrated significant promise in clinical trials, marking a potential milestone in the treatment of this devastating neurological condition. The therapy focuses on reducing harmful protein accumulations in the brain that are characteristic of the disease.</p><p>Clinical trial participants receiving the treatment showed measurable improvements in cognitive function compared to control groups, particularly in areas of memory formation and recall. The treatment protocol, refined through 15 years of research, represents a novel approach to addressing the underlying biological mechanisms of Alzheimer\'s rather than merely managing symptoms.</p><p>Research teams involved in the study have emphasized that while results are encouraging, larger-scale trials are necessary before the treatment can become widely available. The therapy appears most effective when administered during early stages of cognitive decline, highlighting the importance of early detection and intervention.</p><p>The medical community has responded with cautious optimism, noting that previous Alzheimer\'s treatments have often failed to meet initial expectations. However, the consistency of positive results across multiple trial sites has generated considerable interest in expanding research efforts. Families affected by Alzheimer\'s have expressed hope that this research may lead to meaningful treatment options in the near future.</p>',
+                        source: 'Heart of News Editorial',
+                        published_at: '2024-05-24T07:15:00Z',
+                        image: 'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=800&h=400&fit=crop',
+                        bias_score: 0.05,
+                        political_bias: 0.0,
+                        emotional_tone: 0.1,
+                        categories: ['Health', 'Science'],
+                        url: null
+                    },
+                    {
+                        id: 4,
+                        title: 'Economic Indicators Signal Mixed Outlook for Global Markets',
+                        summary: 'Financial analysts examine emerging economic trends as central banks navigate inflation concerns while supporting growth objectives across major economies worldwide.',
+                        content: '<p>Economic data released this week presents a complex picture of global financial conditions, with indicators pointing toward both opportunities and challenges for international markets. Central banking institutions across major economies are carefully balancing anti-inflation measures with growth support policies.</p><p>Employment figures have shown resilience in developed nations, with unemployment rates remaining near historic lows despite concerns about economic slowdown. However, wage growth has begun to moderate, suggesting that labor market tightness may be easing without triggering significant job losses.</p><p>Manufacturing activity has demonstrated regional variations, with some sectors experiencing expansion while others face headwinds from supply chain adjustments and changing consumer preferences. Technology and renewable energy industries continue to attract substantial investment, while traditional manufacturing faces ongoing transformation pressures.</p><p>Currency markets have reflected this uncertainty, with exchange rates fluctuating as investors weigh competing economic signals. Bond markets have similarly shown volatility as traders attempt to anticipate future monetary policy directions.</p><p>Financial institutions have reported generally stable lending conditions, though credit standards have tightened modestly for certain categories of borrowers. Corporate balance sheets remain relatively strong across most sectors, providing a foundation for continued business investment despite economic uncertainties.</p>',
+                        source: 'Heart of News Editorial',
+                        published_at: '2024-05-24T06:45:00Z',
+                        image: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&h=400&fit=crop',
+                        bias_score: 0.08,
+                        political_bias: 0.02,
+                        emotional_tone: 0.15,
+                        categories: ['Business', 'Economics'],
+                        url: null
+                    }
+                ],
+                
+                // Political Articles Data
+                politicalArticles: [
+                    {
+                        id: 201,
+                        title: 'Congressional Committee Advances Bipartisan Infrastructure Modernization Bill',
+                        summary: 'Landmark legislation gains broad support across party lines, focusing on transportation, broadband expansion, and renewable energy grid improvements with $2.3 trillion investment framework.',
+                        content: '<p>A comprehensive infrastructure modernization bill has advanced through the House Transportation Committee with remarkable bipartisan support, marking a significant milestone in legislative cooperation. The proposed legislation addresses critical infrastructure needs across multiple sectors while establishing frameworks for long-term economic competitiveness.</p><p>The bill allocates substantial funding for highway and bridge repairs, high-speed rail development, and public transit system upgrades. Broadband expansion initiatives target underserved rural and urban communities, aiming to establish universal access to high-speed internet within the next decade.</p><p>Renewable energy grid modernization represents a central component of the legislation, with provisions for smart grid technology and energy storage infrastructure. The framework also includes provisions for electric vehicle charging networks and clean energy manufacturing incentives.</p><p>Legislative leaders from both parties have emphasized the bill\'s focus on job creation and economic growth, projecting millions of employment opportunities across construction, technology, and manufacturing sectors. The measure now advances to full House consideration with strong momentum.</p>',
+                        source: 'Heart of News Political Desk',
+                        published_at: '2024-05-24T14:30:00Z',
+                        image: 'https://images.unsplash.com/photo-1587691592099-24045742c181?w=800&h=400&fit=crop',
+                        bias_score: 0.12,
+                        political_bias: 0.02,
+                        emotional_tone: 0.25,
+                        categories: ['Politics', 'Infrastructure'],
+                        url: null
+                    },
+                    {
+                        id: 202,
+                        title: 'State Election Security Measures Undergo Comprehensive Review',
+                        summary: 'Election officials collaborate with cybersecurity experts to enhance voting system protections, implementing advanced verification protocols and voter privacy safeguards.',
+                        content: '<p>Election administrators across multiple states have initiated comprehensive reviews of voting system security measures, working closely with cybersecurity specialists to strengthen democratic processes. The collaborative effort aims to address evolving technological challenges while maintaining voter confidence and accessibility.</p><p>New verification protocols include enhanced paper trail requirements, advanced encryption standards for electronic voting systems, and improved audit procedures. These measures are designed to provide multiple layers of security while preserving the integrity of the electoral process.</p><p>Voter privacy protections have been strengthened through updated data handling procedures and enhanced physical security measures at polling locations. Training programs for election workers focus on identifying and responding to potential security threats while ensuring smooth voting operations.</p><p>The initiative has received support from election security organizations and has been developed with input from voters, advocacy groups, and technology experts. Implementation timelines vary by state, with most jurisdictions planning to complete upgrades before the next major election cycle.</p>',
+                        source: 'Heart of News Political Desk',
+                        published_at: '2024-05-24T12:15:00Z',
+                        image: 'https://images.unsplash.com/photo-1541872705-1f73c6400ec9?w=800&h=400&fit=crop',
+                        bias_score: 0.08,
+                        political_bias: 0.0,
+                        emotional_tone: 0.15,
+                        categories: ['Politics', 'Security'],
+                        url: null
+                    },
+                    {
+                        id: 203,
+                        title: 'Municipal Leaders Pioneer Innovative Community Development Programs',
+                        summary: 'Local governments implement creative approaches to affordable housing, small business support, and community engagement, serving as models for urban planning nationwide.',
+                        content: '<p>Municipal governments across the country are implementing innovative community development programs that address local challenges while serving as models for other jurisdictions. These initiatives demonstrate creative approaches to governance that prioritize resident needs and sustainable growth.</p><p>Affordable housing programs utilize public-private partnerships to develop mixed-income communities that preserve neighborhood character while increasing accessibility. Small business support initiatives provide streamlined permitting processes, technical assistance, and access to capital for local entrepreneurs.</p><p>Community engagement platforms incorporate digital tools and traditional outreach methods to increase citizen participation in local decision-making. These programs have resulted in higher attendance at public meetings and more diverse representation in planning processes.</p><p>The programs have attracted attention from urban planning experts and policy researchers who are studying their effectiveness and potential for replication. Early results suggest positive impacts on community cohesion, economic development, and resident satisfaction with local government services.</p>',
+                        source: 'Heart of News Political Desk',
+                        published_at: '2024-05-24T09:45:00Z',
+                        image: 'https://images.unsplash.com/photo-1573495627361-d9b87960b12d?w=800&h=400&fit=crop',
+                        bias_score: 0.10,
+                        political_bias: -0.05,
+                        emotional_tone: 0.20,
+                        categories: ['Politics', 'Community'],
+                        url: null
+                    }
+                ],
+                
+                // Economic Articles Data
+                economicArticles: [
+                    {
+                        id: 301,
+                        title: 'Manufacturing Sector Experiences Sustained Growth Across Multiple Industries',
+                        summary: 'Production indicators show consistent expansion in automotive, technology, and renewable energy sectors, with employment levels reaching pre-pandemic benchmarks.',
+                        content: '<p>The manufacturing sector has demonstrated remarkable resilience and growth over recent months, with production indicators showing sustained expansion across diverse industries. This positive trend reflects both domestic demand recovery and strategic supply chain adaptations implemented by manufacturers.</p><p>Automotive production has rebounded strongly, with factories operating at near-full capacity to meet increased consumer demand. Technology manufacturing has seen particular strength in semiconductor production and consumer electronics, driven by ongoing digital transformation trends.</p><p>Renewable energy manufacturing represents a rapidly expanding segment, with solar panel and wind turbine production facilities reporting record output levels. This growth has been supported by policy incentives and increasing corporate commitments to clean energy adoption.</p><p>Employment in manufacturing has reached pre-pandemic levels, with many companies actively recruiting skilled workers. Training programs have expanded to address skill gaps in emerging technologies, while wage growth has outpaced inflation in several manufacturing subsectors.</p><p>Industry analysts attribute this sustained growth to successful supply chain diversification, technological innovations, and strategic investments in automation that have improved productivity while maintaining employment levels.</p>',
+                        source: 'Heart of News Economic Desk',
+                        published_at: '2024-05-24T13:20:00Z',
+                        image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&h=400&fit=crop',
+                        bias_score: 0.14,
+                        political_bias: 0.05,
+                        emotional_tone: 0.30,
+                        categories: ['Economics', 'Manufacturing'],
+                        url: null
+                    },
+                    {
+                        id: 302,
+                        title: 'Small Business Innovation Drives Economic Diversification in Rural Communities',
+                        summary: 'Entrepreneurial ventures in agriculture technology, remote services, and artisan manufacturing create new economic opportunities beyond traditional industries.',
+                        content: '<p>Rural communities across the nation are experiencing economic revitalization through innovative small business ventures that leverage local resources and modern technology. These enterprises are creating sustainable economic opportunities while preserving the character of rural areas.</p><p>Agriculture technology startups are developing precision farming solutions, sustainable livestock management systems, and direct-to-consumer marketing platforms. These innovations help local farmers increase productivity while reducing environmental impact and improving profitability.</p><p>Remote service businesses have emerged as significant economic drivers, with entrepreneurs offering consulting, design, and technical services to clients nationwide. High-speed internet expansion has enabled these businesses to compete effectively while maintaining lower operational costs than urban counterparts.</p><p>Artisan manufacturing enterprises combine traditional craftsmanship with modern marketing techniques, reaching national and international markets through e-commerce platforms. These businesses often utilize locally sourced materials and employ community members, creating economic multiplier effects.</p><p>Economic development organizations are supporting these trends through business incubation programs, access to capital, and infrastructure improvements. The result is increased economic diversification and resilience in communities previously dependent on single industries.</p>',
+                        source: 'Heart of News Economic Desk',
+                        published_at: '2024-05-24T11:00:00Z',
+                        image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=800&h=400&fit=crop',
+                        bias_score: 0.11,
+                        political_bias: 0.0,
+                        emotional_tone: 0.25,
+                        categories: ['Economics', 'Rural Development'],
+                        url: null
+                    },
+                    {
+                        id: 303,
+                        title: 'Consumer Spending Patterns Reflect Shift Toward Sustainable Products',
+                        summary: 'Market analysis reveals growing preference for environmentally responsible goods and services, influencing business strategies across retail and manufacturing sectors.',
+                        content: '<p>Recent consumer spending data indicates a significant shift in purchasing preferences toward environmentally sustainable products and services. This trend is reshaping business strategies across multiple sectors as companies respond to evolving consumer values and market demands.</p><p>Retail analysis shows increased sales of products with sustainable packaging, ethical sourcing, and reduced environmental impact. Consumers demonstrate willingness to pay premium prices for goods that align with environmental values, particularly in categories such as food, clothing, and household products.</p><p>Service sector businesses are adapting by offering eco-friendly alternatives and transparent sustainability reporting. Companies in transportation, hospitality, and financial services are implementing green practices and communicating environmental benefits to attract environmentally conscious consumers.</p><p>Manufacturing companies are investing in sustainable production methods, renewable energy, and circular economy principles. These adaptations often result in long-term cost savings while meeting consumer demand for responsible business practices.</p><p>Market researchers project continued growth in sustainable product categories, with implications for supply chains, product development, and marketing strategies. This consumer-driven transformation represents a fundamental shift in how businesses approach environmental responsibility and market positioning.</p>',
+                        source: 'Heart of News Economic Desk',
+                        published_at: '2024-05-24T08:15:00Z',
+                        image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=800&h=400&fit=crop',
+                        bias_score: 0.13,
+                        political_bias: -0.02,
+                        emotional_tone: 0.22,
+                        categories: ['Economics', 'Sustainability'],
+                        url: null
+                    }
+                ],
+                
+                // Crypto Articles Data
+                cryptoArticles: [
+                    {
+                        id: 101,
+                        title: 'Bitcoin Network Achieves New Milestone in Transaction Efficiency',
+                        summary: 'Recent protocol optimizations have significantly enhanced Bitcoin network performance, reducing transaction fees while maintaining security standards and decentralization principles.',
+                        content: '<p>The Bitcoin network has reached a significant milestone in transaction processing efficiency, marking a notable advancement in the world\'s leading cryptocurrency infrastructure. Recent implementation of optimization protocols has resulted in measurable improvements across multiple performance metrics.</p><p>Transaction processing times have decreased by an average of 15% over the past month, while network fees have stabilized at levels considerably lower than peak periods. These improvements stem from enhanced mempool management algorithms and more efficient block space utilization.</p><p>Mining operations have adapted to these changes with upgraded hardware configurations that support the optimized protocols. The network\'s hash rate has remained stable throughout the transition, indicating sustained security levels despite the operational improvements.</p><p>Development teams continue to monitor network performance indicators and user adoption patterns. Early data suggests that reduced fees may encourage increased transactional usage, particularly for smaller value transfers that were previously cost-prohibitive.</p><p>The cryptocurrency community has responded positively to these developments, with many analysts viewing the improvements as evidence of Bitcoin\'s ongoing evolution as a global payment system. These technical advances reinforce the network\'s position as the foundation of the broader cryptocurrency ecosystem.</p>',
+                        source: 'Heart of News Crypto Desk',
+                        published_at: '2024-05-24T09:15:00Z',
+                        image: 'https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=800&h=400&fit=crop',
+                        bias_score: 0.12,
+                        political_bias: 0.05,
+                        emotional_tone: 0.1,
+                        categories: ['Bitcoin', 'Technology'],
+                        crypto_type: 'Technology',
+                        impact_level: 'high',
+                        url: null
+                    },
+                    {
+                        id: 102,
+                        title: 'Ethereum Layer 2 Solutions Show Remarkable Growth in User Adoption',
+                        summary: 'Layer 2 scaling solutions on Ethereum demonstrate unprecedented growth in daily active users and transaction volume, signaling broad acceptance of next-generation blockchain infrastructure.',
+                        content: '<p>Ethereum\'s Layer 2 scaling solutions have experienced extraordinary growth in user adoption and transaction activity, representing a fundamental shift in how users interact with decentralized applications and services. These second-layer protocols have successfully addressed many of the scalability challenges that previously limited mainstream blockchain adoption.</p><p>Transaction volumes across major Layer 2 platforms have increased by over 300% in the past quarter, while average transaction costs have decreased to fractions of main network fees. This combination of increased capacity and reduced costs has enabled new categories of applications that were previously economically unfeasible.</p><p>Decentralized finance applications built on Layer 2 solutions now process billions of dollars in weekly trading volume, demonstrating the maturation of this technology stack. Gaming and social media applications have also found sustainable business models through these more efficient blockchain infrastructures.</p><p>Developer activity within the Layer 2 ecosystem has accelerated significantly, with new protocols launching regularly and existing platforms implementing advanced features. Interoperability between different Layer 2 solutions continues to improve, creating a more connected and efficient overall ecosystem.</p><p>Security measures have proven robust throughout this growth period, with no significant incidents affecting user funds or network integrity. This track record has increased institutional confidence in Layer 2 technologies as viable infrastructure for large-scale applications.</p>',
+                        source: 'Heart of News Crypto Desk',
+                        published_at: '2024-05-24T08:00:00Z',
+                        image: 'https://images.unsplash.com/photo-1644361567968-fdb931d80fb6?w=800&h=400&fit=crop',
+                        bias_score: 0.08,
+                        political_bias: 0.0,
+                        emotional_tone: 0.12,
+                        categories: ['Ethereum', 'DeFi', 'Technology'],
+                        crypto_type: 'Technology',
+                        impact_level: 'high',
+                        url: null
+                    },
+                    {
+                        id: 103,
+                        title: 'Global Financial Institutions Advance Digital Asset Infrastructure Development',
+                        summary: 'Major banking institutions worldwide are implementing comprehensive digital asset capabilities, creating robust infrastructure for institutional cryptocurrency adoption and traditional finance integration.',
+                        content: '<p>Financial institutions across multiple continents are accelerating their digital asset infrastructure development, marking a significant evolution in traditional banking\'s approach to cryptocurrency integration. These developments represent years of careful planning and regulatory collaboration.</p><p>Several multinational banks have announced completion of pilot programs for digital asset custody services, with full-scale launches scheduled for the coming quarters. These services will provide institutional clients with secure storage and management of various cryptocurrencies and digital assets.</p><p>Trading platforms specifically designed for institutional clients are being deployed with advanced security features and regulatory compliance capabilities. These platforms integrate with existing banking infrastructure to provide seamless digital asset transactions alongside traditional financial services.</p><p>Regulatory frameworks supporting these developments have been established in multiple jurisdictions, providing clear guidelines for institutional digital asset operations. Compliance departments have developed comprehensive procedures to ensure all activities meet current regulatory standards.</p><p>Central bank digital currency research has also intensified, with several countries advancing toward pilot implementations. These developments suggest that digital currencies will become increasingly integrated into traditional monetary systems over time.</p><p>Market analysts view these institutional developments as evidence of cryptocurrency\'s transition from experimental technology to established financial infrastructure. The combination of regulatory clarity and institutional adoption creates a foundation for broader market maturation.</p>',
+                        source: 'Heart of News Financial Desk',
+                        published_at: '2024-05-24T07:30:00Z',
+                        image: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=800&h=400&fit=crop',
+                        bias_score: 0.06,
+                        political_bias: 0.1,
+                        emotional_tone: 0.08,
+                        categories: ['Adoption', 'Regulation', 'Institutional'],
+                        crypto_type: 'Adoption',
+                        impact_level: 'high',
+                        url: null
+                    },
+                    {
+                        id: 104,
+                        title: 'NFT Market Evolution: From Digital Collectibles to Utility-Focused Applications',
+                        summary: 'The non-fungible token ecosystem has matured beyond simple collectibles, with new applications emerging in identity verification, intellectual property management, and decentralized governance systems.',
+                        content: '<p>The non-fungible token market has undergone significant transformation, evolving from predominantly collectible-focused applications to sophisticated utility-driven platforms that address real-world challenges across multiple industries. This evolution reflects broader blockchain technology maturation.</p><p>Identity verification systems built on NFT technology now provide secure, user-controlled digital credentials that eliminate many traditional authentication vulnerabilities. These systems allow individuals to prove credentials without revealing sensitive personal information.</p><p>Intellectual property management has been revolutionized through NFT-based ownership tracking and licensing systems. Creators can now establish verifiable ownership chains and automate royalty distributions through smart contract implementations.</p><p>Gaming applications have integrated NFTs as functional assets rather than mere collectibles, creating economies where digital items retain value across different platforms and games. This interoperability has created new categories of digital asset utility.</p><p>Enterprise applications are emerging for supply chain tracking, document verification, and access control systems. These business-focused implementations demonstrate NFT technology\'s potential beyond consumer entertainment applications.</p><p>Market dynamics have stabilized around utility rather than speculation, with price movements increasingly correlated to practical functionality and adoption metrics. This shift suggests a maturing market focused on sustainable value creation rather than short-term trading activity.</p>',
+                        source: 'Heart of News Tech Desk',
+                        published_at: '2024-05-24T06:15:00Z',
+                        image: 'https://images.unsplash.com/photo-1634973357973-f2ed2657db3c?w=800&h=400&fit=crop',
+                        bias_score: 0.10,
+                        political_bias: 0.0,
+                        emotional_tone: 0.15,
+                        categories: ['NFT', 'Technology', 'Innovation'],
+                        crypto_type: 'Technology',
+                        impact_level: 'medium',
+                        url: null
+                    }
+                ],
+                
+                // Esports Articles Data
+                esportsArticles: [
+                    {
+                        id: 401,
+                        title: 'World Championship Finals Break Viewership Records Across Multiple Platforms',
+                        summary: 'The League of Legends World Championship finals achieved unprecedented global viewership, with concurrent streams reaching 5.1 million viewers across Twitch, YouTube, and regional platforms.',
+                        content: '<p>The 2024 League of Legends World Championship finals have set new industry standards for esports viewership, demonstrating the continued growth and mainstream acceptance of competitive gaming. The championship match between top international teams attracted a global audience that rivals traditional sports events.</p><p>Streaming platforms reported exceptional engagement metrics, with Twitch experiencing its highest concurrent viewership for an esports event. YouTube Gaming and regional streaming services in Asia and Europe also contributed to the record-breaking numbers, highlighting the truly global nature of competitive gaming.</p><p>The tournament featured innovative broadcast production, including multiple language streams, interactive viewing features, and behind-the-scenes content that enhanced the viewer experience. These technological improvements have contributed to increased audience retention and engagement throughout the tournament.</p><p>Industry analysts note that this viewership milestone represents significant growth in the esports ecosystem, with implications for sponsorship values, media rights, and the overall commercial viability of competitive gaming as entertainment.</p>',
+                        source: 'Heart of News Esports Desk',
+                        published_at: '2024-05-24T16:45:00Z',
+                        image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&h=400&fit=crop',
+                        bias_score: 0.09,
+                        political_bias: 0.0,
+                        emotional_tone: 0.20,
+                        categories: ['Esports', 'Entertainment'],
+                        game: 'League of Legends',
+                        tournament: 'World Championship',
+                        url: null
+                    },
+                    {
+                        id: 402,
+                        title: 'Professional Gaming Organizations Implement Comprehensive Player Wellness Programs',
+                        summary: 'Major esports organizations introduce mental health support, physical fitness regimens, and work-life balance initiatives to address player burnout and enhance competitive performance.',
+                        content: '<p>Leading esports organizations have launched comprehensive player wellness programs addressing the unique challenges faced by professional gamers. These initiatives represent a significant shift toward sustainable career practices in competitive gaming.</p><p>Mental health support includes access to sports psychologists, stress management training, and counseling services specifically designed for competitive gaming environments. Organizations recognize that mental resilience is crucial for peak performance in high-pressure tournament situations.</p><p>Physical wellness programs incorporate ergonomic assessments, exercise routines tailored for gamers, and nutrition guidance to address the health challenges associated with extended gaming sessions. These programs aim to prevent common issues such as repetitive strain injuries and eye strain.</p><p>Work-life balance initiatives include mandatory rest periods, vacation time, and limits on practice hours to prevent burnout. These policies reflect growing awareness that sustainable practices lead to better long-term performance and career longevity.</p><p>The implementation of these programs signals the maturation of esports as a professional industry, with organizations recognizing their responsibility for player welfare and the importance of sustainable competitive practices.</p>',
+                        source: 'Heart of News Esports Desk',
+                        published_at: '2024-05-24T13:20:00Z',
+                        image: 'https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=800&h=400&fit=crop',
+                        bias_score: 0.07,
+                        political_bias: 0.0,
+                        emotional_tone: 0.15,
+                        categories: ['Esports', 'Health'],
+                        game: 'Multiple',
+                        tournament: 'N/A',
+                        url: null
+                    },
+                    {
+                        id: 403,
+                        title: 'Collegiate Esports Programs Expand to Include Academic Scholarships and Career Development',
+                        summary: 'Universities worldwide increase investment in esports programs, offering scholarships, degree pathways, and industry partnerships to prepare students for gaming industry careers.',
+                        content: '<p>Educational institutions are significantly expanding their esports programs, recognizing competitive gaming as both a legitimate sport and a pathway to diverse career opportunities in the gaming industry. These comprehensive programs combine competitive play with academic and professional development.</p><p>Scholarship programs now cover full tuition for talented players, similar to traditional athletic scholarships. Universities are recruiting top talent globally and providing facilities comparable to professional training environments, including dedicated gaming centers and coaching staff.</p><p>Academic integration includes degree programs in game design, esports management, broadcasting, and data analysis. These curricula prepare students for various roles within the gaming ecosystem, from player management to tournament production and content creation.</p><p>Industry partnerships provide internship opportunities, mentorship programs, and direct career placement assistance. Major gaming companies actively recruit from university esports programs, creating clear career pathways for students regardless of their competitive playing success.</p><p>This educational approach addresses the broader gaming industry\'s need for skilled professionals while legitimizing esports as a viable academic and career pursuit. The programs demonstrate how competitive gaming can serve as a gateway to diverse opportunities in technology and entertainment sectors.</p>',
+                        source: 'Heart of News Esports Desk',
+                        published_at: '2024-05-24T10:30:00Z',
+                        image: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=800&h=400&fit=crop',
+                        bias_score: 0.11,
+                        political_bias: 0.0,
+                        emotional_tone: 0.25,
+                        categories: ['Esports', 'Education'],
+                        game: 'Multiple',
+                        tournament: 'Collegiate',
+                        url: null
+                    }
+                ],
+                
+                filteredArticles: [],
+                filteredCryptoArticles: [],
+                
+                // Translations
+                translations: {
+                    en: {
+                        // Navigation
+                        home: 'Home',
+                        allNews: 'All News',
+                        political: 'Political',
+                        economic: 'Economic',
+                        crypto: 'Crypto',
+                        esports: 'Esports',
+                        sources: 'Sources',
+                        about: 'About',
+                        login: 'Login',
+                        logout: 'Logout',
+                        signUp: 'Sign Up',
+                        admin: 'Admin',
+                        welcome: 'Welcome',
+                        
+                        // Hero Section
+                        heroTitle: 'Unbiased News Without Propaganda',
+                        heroSubtitle: 'Heart of News delivers balanced, fact-based reporting by synthesizing information from multiple sources. We provide comprehensive analysis that removes bias and propaganda while preserving truth and accuracy.',
+                        browseAllNews: 'Browse All News',
+                        politicalNews: 'Political News',
+                        economicNews: 'Economic News',
+                        cryptoNews: 'Crypto News',
+                        esportsNews: 'Esports News',
+                        
+                        // Top Strip
+                        verifiedReporting: 'Verified Unbiased Reporting',
+                        updatedHourly: 'Updated Every Hour',
+                        joinCommunity: 'Join our community',
+                        welcomeBack: 'Welcome back!',
+                        live: 'Live',
+                        
+                        // Sections
+                        latestNews: 'Latest News Stories',
+                        newsSubtitle: 'Every story researched, analyzed, and professionally crafted by our editorial team for balanced, unbiased reporting',
+                        politicalTitle: 'Political News & Government',
+                        politicalSubtitle: 'Comprehensive coverage of political developments, policy analysis, and government initiatives',
+                        economicTitle: 'Economic News & Business',
+                        economicSubtitle: 'In-depth economic analysis, market trends, and business developments',
+                        cryptoTitle: 'Cryptocurrency & Blockchain News',
+                        cryptoSubtitle: 'Comprehensive cryptocurrency market updates, blockchain technology developments, and digital asset insights',
+                        esportsTitle: 'Esports & Gaming News',
+                        esportsSubtitle: 'Professional gaming tournaments, industry updates, and competitive gaming analysis'
+                    },
+                    ru: {
+                        // Navigation
+                        home: 'Главная',
+                        allNews: 'Все новости',
+                        political: 'Политика',
+                        economic: 'Экономика',
+                        crypto: 'Криптовалюты',
+                        esports: 'Киберспорт',
+                        sources: 'Источники',
+                        about: 'О нас',
+                        login: 'Войти',
+                        logout: 'Выйти',
+                        signUp: 'Регистрация',
+                        admin: 'Админ',
+                        welcome: 'Добро пожаловать',
+                        
+                        // Hero Section
+                        heroTitle: 'Беспристрастные новости без пропаганды',
+                        heroSubtitle: 'Heart of News предоставляет сбалансированную, основанную на фактах отчетность, синтезируя информацию из множества источников. Мы обеспечиваем всесторонний анализ, который устраняет предвзятость и пропаганду, сохраняя истину и точность.',
+                        browseAllNews: 'Просмотреть все новости',
+                        politicalNews: 'Политические новости',
+                        economicNews: 'Экономические новости',
+                        cryptoNews: 'Криптовалютные новости',
+                        esportsNews: 'Киберспортивные новости',
+                        
+                        // Top Strip
+                        verifiedReporting: 'Проверенная беспристрастная отчетность',
+                        updatedHourly: 'Обновляется каждый час',
+                        joinCommunity: 'Присоединяйтесь к нашему сообществу',
+                        welcomeBack: 'С возвращением!',
+                        live: 'В эфире',
+                        
+                        // Sections
+                        latestNews: 'Последние новости',
+                        newsSubtitle: 'Каждая история исследована, проанализирована и профессионально создана нашей редакцией для сбалансированной, беспристрастной отчетности',
+                        politicalTitle: 'Политические новости и правительство',
+                        politicalSubtitle: 'Всестороннее освещение политических событий, анализ политики и правительственных инициатив',
+                        economicTitle: 'Экономические новости и бизнес',
+                        economicSubtitle: 'Углубленный экономический анализ, рыночные тенденции и развитие бизнеса',
+                        cryptoTitle: 'Новости криптовалют и блокчейна',
+                        cryptoSubtitle: 'Всесторонние обновления рынка криптовалют, развитие технологий блокчейна и аналитика цифровых активов',
+                        esportsTitle: 'Новости киберспорта и игр',
+                        esportsSubtitle: 'Профессиональные игровые турниры, обновления индустрии и анализ соревновательного гейминга'
+                    },
+                    es: {
+                        // Navigation
+                        home: 'Inicio',
+                        allNews: 'Todas las noticias',
+                        political: 'Política',
+                        economic: 'Economía',
+                        crypto: 'Cripto',
+                        esports: 'Esports',
+                        sources: 'Fuentes',
+                        about: 'Acerca de',
+                        login: 'Iniciar sesión',
+                        logout: 'Cerrar sesión',
+                        signUp: 'Registrarse',
+                        admin: 'Admin',
+                        welcome: 'Bienvenido',
+                        
+                        // Hero Section
+                        heroTitle: 'Noticias imparciales sin propaganda',
+                        heroSubtitle: 'Heart of News ofrece reportes equilibrados y basados en hechos sintetizando información de múltiples fuentes. Proporcionamos análisis integral que elimina sesgos y propaganda preservando la verdad y precisión.',
+                        browseAllNews: 'Ver todas las noticias',
+                        politicalNews: 'Noticias políticas',
+                        economicNews: 'Noticias económicas',
+                        cryptoNews: 'Noticias cripto',
+                        esportsNews: 'Noticias de esports',
+                        
+                        // Top Strip
+                        verifiedReporting: 'Reportes verificados e imparciales',
+                        updatedHourly: 'Actualizado cada hora',
+                        joinCommunity: 'Únete a nuestra comunidad',
+                        welcomeBack: '¡Bienvenido de vuelta!',
+                        live: 'En vivo',
+                        
+                        // Sections
+                        latestNews: 'Últimas noticias',
+                        newsSubtitle: 'Cada historia investigada, analizada y creada profesionalmente por nuestro equipo editorial para reportes equilibrados e imparciales',
+                        politicalTitle: 'Noticias políticas y gobierno',
+                        politicalSubtitle: 'Cobertura integral de desarrollos políticos, análisis de políticas e iniciativas gubernamentales',
+                        economicTitle: 'Noticias económicas y empresariales',
+                        economicSubtitle: 'Análisis económico profundo, tendencias del mercado y desarrollos empresariales',
+                        cryptoTitle: 'Noticias de criptomonedas y blockchain',
+                        cryptoSubtitle: 'Actualizaciones integrales del mercado de criptomonedas, desarrollos de tecnología blockchain y análisis de activos digitales',
+                        esportsTitle: 'Noticias de esports y gaming',
+                        esportsSubtitle: 'Torneos de gaming profesional, actualizaciones de la industria y análisis de gaming competitivo'
+                    },
+                    zh: {
+                        // Navigation
+                        home: '首页',
+                        allNews: '所有新闻',
+                        political: '政治',
+                        economic: '经济',
+                        crypto: '加密货币',
+                        esports: '电子竞技',
+                        sources: '来源',
+                        about: '关于',
+                        login: '登录',
+                        logout: '登出',
+                        signUp: '注册',
+                        admin: '管理员',
+                        welcome: '欢迎',
+                        
+                        // Hero Section
+                        heroTitle: '无偏见新闻，不含宣传',
+                        heroSubtitle: 'Heart of News通过综合多个来源的信息，提供平衡、基于事实的报道。我们提供全面的分析，消除偏见和宣传，同时保持真实性和准确性。',
+                        browseAllNews: '浏览所有新闻',
+                        politicalNews: '政治新闻',
+                        economicNews: '经济新闻',
+                        cryptoNews: '加密货币新闻',
+                        esportsNews: '电子竞技新闻',
+                        
+                        // Top Strip
+                        verifiedReporting: '经过验证的无偏见报道',
+                        updatedHourly: '每小时更新',
+                        joinCommunity: '加入我们的社区',
+                        welcomeBack: '欢迎回来！',
+                        live: '直播',
+                        
+                        // Sections
+                        latestNews: '最新新闻',
+                        newsSubtitle: '每个故事都由我们的编辑团队研究、分析和专业制作，以实现平衡、无偏见的报道',
+                        politicalTitle: '政治新闻与政府',
+                        politicalSubtitle: '全面报道政治发展、政策分析和政府倡议',
+                        economicTitle: '经济新闻与商业',
+                        economicSubtitle: '深入的经济分析、市场趋势和商业发展',
+                        cryptoTitle: '加密货币和区块链新闻',
+                        cryptoSubtitle: '全面的加密货币市场更新、区块链技术发展和数字资产洞察',
+                        esportsTitle: '电子竞技和游戏新闻',
+                        esportsSubtitle: '专业游戏锦标赛、行业更新和竞技游戏分析'
+                    },
+                    fr: {
+                        // Navigation
+                        home: 'Accueil',
+                        allNews: 'Toutes les actualités',
+                        political: 'Politique',
+                        economic: 'Économie',
+                        crypto: 'Crypto',
+                        esports: 'Esports',
+                        sources: 'Sources',
+                        about: 'À propos',
+                        login: 'Connexion',
+                        logout: 'Déconnexion',
+                        signUp: 'S\'inscrire',
+                        admin: 'Admin',
+                        welcome: 'Bienvenue',
+                        
+                        // Hero Section
+                        heroTitle: 'Actualités impartiales sans propagande',
+                        heroSubtitle: 'Heart of News fournit des reportages équilibrés et factuels en synthétisant des informations de sources multiples. Nous offrons une analyse complète qui élimine les biais et la propagande tout en préservant la vérité et la précision.',
+                        browseAllNews: 'Parcourir toutes les actualités',
+                        politicalNews: 'Actualités politiques',
+                        economicNews: 'Actualités économiques',
+                        cryptoNews: 'Actualités crypto',
+                        esportsNews: 'Actualités esports',
+                        
+                        // Top Strip
+                        verifiedReporting: 'Reportages vérifiés et impartiaux',
+                        updatedHourly: 'Mis à jour chaque heure',
+                        joinCommunity: 'Rejoignez notre communauté',
+                        welcomeBack: 'Bon retour !',
+                        live: 'En direct',
+                        
+                        // Sections
+                        latestNews: 'Dernières actualités',
+                        newsSubtitle: 'Chaque histoire recherchée, analysée et créée professionnellement par notre équipe éditoriale pour des reportages équilibrés et impartiaux',
+                        politicalTitle: 'Actualités politiques et gouvernement',
+                        politicalSubtitle: 'Couverture complète des développements politiques, analyse des politiques et initiatives gouvernementales',
+                        economicTitle: 'Actualités économiques et entreprises',
+                        economicSubtitle: 'Analyse économique approfondie, tendances du marché et développements commerciaux',
+                        cryptoTitle: 'Actualités cryptomonnaies et blockchain',
+                        cryptoSubtitle: 'Mises à jour complètes du marché des cryptomonnaies, développements de la technologie blockchain et analyses d\'actifs numériques',
+                        esportsTitle: 'Actualités esports et gaming',
+                        esportsSubtitle: 'Tournois de gaming professionnel, mises à jour de l\'industrie et analyse du gaming compétitif'
+                    },
+                    ar: {
+                        // Navigation
+                        home: 'الرئيسية',
+                        allNews: 'جميع الأخبار',
+                        political: 'سياسة',
+                        economic: 'اقتصاد',
+                        crypto: 'عملات رقمية',
+                        esports: 'رياضة إلكترونية',
+                        sources: 'المصادر',
+                        about: 'حول',
+                        login: 'تسجيل الدخول',
+                        logout: 'تسجيل الخروج',
+                        signUp: 'التسجيل',
+                        admin: 'مدير',
+                        welcome: 'مرحباً',
+                        
+                        // Hero Section
+                        heroTitle: 'أخبار محايدة بدون دعاية',
+                        heroSubtitle: 'يقدم Heart of News تقارير متوازنة ومبنية على الحقائق من خلال تجميع المعلومات من مصادر متعددة. نوفر تحليلاً شاملاً يزيل التحيز والدعاية مع الحفاظ على الحقيقة والدقة.',
+                        browseAllNews: 'تصفح جميع الأخبار',
+                        politicalNews: 'الأخبار السياسية',
+                        economicNews: 'الأخبار الاقتصادية',
+                        cryptoNews: 'أخبار العملات الرقمية',
+                        esportsNews: 'أخبار الرياضة الإلكترونية',
+                        
+                        // Top Strip
+                        verifiedReporting: 'تقارير محققة ومحايدة',
+                        updatedHourly: 'يتم التحديث كل ساعة',
+                        joinCommunity: 'انضم إلى مجتمعنا',
+                        welcomeBack: 'مرحباً بعودتك!',
+                        live: 'مباشر',
+                        
+                        // Sections
+                        latestNews: 'آخر الأخبار',
+                        newsSubtitle: 'كل قصة مبحوثة ومحللة ومصاغة بمهنية من قبل فريقنا التحريري للحصول على تقارير متوازنة وغير متحيزة',
+                        politicalTitle: 'الأخبار السياسية والحكومة',
+                        politicalSubtitle: 'تغطية شاملة للتطورات السياسية وتحليل السياسات والمبادرات الحكومية',
+                        economicTitle: 'الأخبار الاقتصادية والأعمال',
+                        economicSubtitle: 'تحليل اقتصادي متعمق واتجاهات السوق والتطورات التجارية',
+                        cryptoTitle: 'أخبار العملات الرقمية والبلوك تشين',
+                        cryptoSubtitle: 'تحديثات شاملة لسوق العملات الرقمية وتطورات تقنية البلوك تشين وتحليل الأصول الرقمية',
+                        esportsTitle: 'أخبار الرياضة الإلكترونية والألعاب',
+                        esportsSubtitle: 'بطولات الألعاب المهنية وتحديثات الصناعة وتحليل الألعاب التنافسية'
+                    }
+                },
+                
+                // Initialize
+                init() {
+                    this.filteredArticles = [...this.articles];
+                    this.filteredCryptoArticles = [...this.cryptoArticles];
+                    
+                    // Simulate real-time updates
+                    setInterval(() => {
+                        this.simulateNewArticle();
+                    }, 30000); // Every 30 seconds
+                },
+                
+                // Methods
+                login() {
+                    this.isLoggingIn = true;
+                    
+                    setTimeout(() => {
+                        if (this.loginForm.email === 'admin@heartofnews.local' && this.loginForm.password === 'admin123') {
+                            this.user = { username: 'Admin', role: 'admin', email: this.loginForm.email };
+                            this.isLoggedIn = true;
+                            this.showLogin = false;
+                        } else if (this.loginForm.email === 'user@heartofnews.local' && this.loginForm.password === 'user123') {
+                            this.user = { username: 'User', role: 'user', email: this.loginForm.email };
+                            this.isLoggedIn = true;
+                            this.showLogin = false;
+                        } else {
+                            alert('Invalid credentials. Please use the demo credentials provided.');
+                        }
+                        this.isLoggingIn = false;
+                    }, 1500);
+                },
+                
+                logout() {
+                    this.isLoggedIn = false;
+                    this.user = null;
+                    this.showAdmin = false;
+                },
+                
+                filterArticles() {
+                    this.filteredArticles = this.articles.filter(article => {
+                        const matchesSearch = !this.searchQuery || 
+                            article.title.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                            article.summary.toLowerCase().includes(this.searchQuery.toLowerCase());
+                        
+                        const matchesSource = !this.selectedSource || article.source === this.selectedSource;
+                        
+                        const matchesBias = !this.selectedBias || this.checkBiasLevel(article.bias_score);
+                        
+                        const matchesCategory = !this.selectedCategory || 
+                            article.categories.includes(this.selectedCategory);
+                        
+                        return matchesSearch && matchesSource && matchesBias && matchesCategory;
+                    });
+                },
+                
+                filterCryptoArticles() {
+                    this.filteredCryptoArticles = this.cryptoArticles.filter(article => {
+                        const matchesSearch = !this.cryptoSearchQuery || 
+                            article.title.toLowerCase().includes(this.cryptoSearchQuery.toLowerCase()) ||
+                            article.summary.toLowerCase().includes(this.cryptoSearchQuery.toLowerCase());
+                        
+                        const matchesCrypto = !this.selectedCrypto || 
+                            article.categories.some(cat => cat.toLowerCase().includes(this.selectedCrypto.toLowerCase()));
+                        
+                        const matchesType = !this.selectedCryptoType || article.crypto_type === this.selectedCryptoType;
+                        
+                        const matchesImpact = !this.selectedCryptoImpact || article.impact_level === this.selectedCryptoImpact;
+                        
+                        return matchesSearch && matchesCrypto && matchesType && matchesImpact;
+                    });
+                },
+                
+                checkBiasLevel(biasScore) {
+                    const score = biasScore * 100;
+                    if (this.selectedBias === 'low') return score <= 30;
+                    if (this.selectedBias === 'medium') return score > 30 && score <= 60;
+                    if (this.selectedBias === 'high') return score > 60;
+                    return true;
+                },
+                
+                getBiasColor(biasScore) {
+                    const score = biasScore * 100;
+                    if (score <= 30) return 'bg-green-500';
+                    if (score <= 60) return 'bg-yellow-500';
+                    return 'bg-red-500';
+                },
+                
+                getBiasLabel(biasScore) {
+                    const score = biasScore * 100;
+                    if (score <= 30) return 'Low Bias';
+                    if (score <= 60) return 'Medium Bias';
+                    return 'High Bias';
+                },
+                
+                getEmotionalTone(emotionalTone) {
+                    const score = emotionalTone * 100;
+                    if (score <= 30) return 'Neutral';
+                    if (score <= 60) return 'Somewhat Emotional';
+                    return 'Highly Emotional';
+                },
+                
+                showArticleDetail(article) {
+                    this.selectedArticle = article;
+                },
+                
+                formatDate(dateString) {
+                    return new Date(dateString).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                },
+                
+                navigateToSection(section) {
+                    this.currentSection = section;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+                
+                handleLogoUpload(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    
+                    // Check file size (2MB limit)
+                    if (file.size > 2 * 1024 * 1024) {
+                        alert('File size must be less than 2MB');
+                        return;
+                    }
+                    
+                    // Check file type
+                    if (!file.type.startsWith('image/')) {
+                        alert('Please select an image file');
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.customLogo = e.target.result;
+                        console.log('✅ Logo uploaded successfully');
+                    };
+                    reader.readAsDataURL(file);
+                },
+                
+                setTheme(theme) {
+                    this.themePreference = theme;
+                    localStorage.setItem('themePreference', theme);
+                    this.applyTheme();
+                    console.log('🌓 Theme preference set to:', theme);
+                },
+                
+                applyTheme() {
+                    if (this.themePreference === 'auto') {
+                        this.darkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    } else {
+                        this.darkMode = this.themePreference === 'dark';
+                    }
+                },
+                
+                toggleDarkMode() {
+                    // Legacy function for simple toggle
+                    this.setTheme(this.darkMode ? 'light' : 'dark');
+                },
+                
+                initializeTheme() {
+                    const savedTheme = localStorage.getItem('themePreference') || 'auto';
+                    this.themePreference = savedTheme;
+                    this.applyTheme();
+                    
+                    // Listen for system theme changes when in auto mode
+                    if (window.matchMedia) {
+                        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                            if (this.themePreference === 'auto') {
+                                this.applyTheme();
+                            }
+                        });
+                    }
+                },
+                
+                // Translation methods
+                translate(key) {
+                    return this.translations[this.currentLanguage]?.[key] || this.translations.en[key] || key;
+                },
+                
+                setLanguage(language) {
+                    this.currentLanguage = language;
+                    localStorage.setItem('preferredLanguage', language);
+                    this.showLanguageSelector = false;
+                    this.updateLanguageDirection();
+                    console.log('🌐 Language changed to:', language);
+                },
+                
+                initializeLanguage() {
+                    const savedLanguage = localStorage.getItem('preferredLanguage');
+                    if (savedLanguage && this.translations[savedLanguage]) {
+                        this.currentLanguage = savedLanguage;
+                    } else {
+                        // Try to detect browser language
+                        const browserLang = navigator.language.split('-')[0];
+                        if (this.translations[browserLang]) {
+                            this.currentLanguage = browserLang;
+                        }
+                    }
+                    this.updateLanguageDirection();
+                },
+                
+                updateLanguageDirection() {
+                    // Handle RTL languages
+                    const rtlLanguages = ['ar'];
+                    const isRTL = rtlLanguages.includes(this.currentLanguage);
+                    
+                    // Update document direction
+                    document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+                    document.documentElement.lang = this.currentLanguage;
+                    
+                    // Update lang attribute for proper styling
+                    document.body.className = document.body.className.replace(/lang-\w+/g, '') + ` lang-${this.currentLanguage}`;
+                },
+                
+                simulateNewArticle() {
+                    // This would normally come from WebSocket
+                    console.log('🔄 Checking for new articles (demo simulation)');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
