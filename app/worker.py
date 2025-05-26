@@ -19,6 +19,7 @@ from app.services.ai.bias_detector import BiasDetector
 from app.services.scraper.factory import ScraperFactory
 from app.services.scraper.manager import ScraperManager
 from app.services.scraper.sources import get_default_sources
+from app.services.telegram_service import telegram_service
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -41,15 +42,19 @@ celery_app.conf.task_routes = {
 celery_app.conf.beat_schedule = {
     "scrape-sources": {
         "task": "app.worker.scrape_sources",
-        "schedule": 60 * 60,  # every hour
+        "schedule": 5 * 60,  # every 5 minutes for breaking news
     },
     "analyze-articles": {
         "task": "app.worker.analyze_articles",
-        "schedule": 15 * 60,  # every 15 minutes
+        "schedule": 3 * 60,  # every 3 minutes for fast processing
     },
     "publish-articles": {
         "task": "app.worker.publish_articles",
-        "schedule": 30 * 60,  # every 30 minutes
+        "schedule": 5 * 60,  # every 5 minutes for immediate publishing
+    },
+    "publish-breaking-news": {
+        "task": "app.worker.publish_breaking_news",
+        "schedule": 2 * 60,  # every 2 minutes for breaking news
     },
 }
 
@@ -72,8 +77,9 @@ def get_db() -> Session:
 
 @celery_app.task
 def scrape_sources(
-    limit_per_source: int = 10,
-    source_ids: Optional[List[str]] = None
+    limit_per_source: int = 20,  # Increased for more current news
+    source_ids: Optional[List[str]] = None,
+    prioritize_political: bool = True
 ) -> Dict[str, Any]:
     """
     Scrape articles from sources and save to database
@@ -287,28 +293,65 @@ def publish_articles(limit: int = 20) -> Dict[str, Any]:
             logger.info("No articles to publish")
             return {"status": "success", "message": "No articles to publish", "published": 0}
         
-        # Update status to published
+        # Publish to external platforms and update status
         published_count = 0
+        telegram_results = []
         
         for db_article in processing_articles:
-            # Apply any additional publishing logic here
-            # For example, filtering based on bias scores
-            
-            # Mark as published
-            article.update_status(
-                db=db,
-                db_obj=db_article,
-                status="published"
-            )
-            
-            published_count += 1
+            try:
+                # Apply any additional publishing logic here
+                # For example, filtering based on bias scores
+                
+                # Publish to Telegram if enabled
+                if telegram_service.enabled:
+                    try:
+                        # Run async function in sync context
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                        telegram_result = loop.run_until_complete(
+                            telegram_service.publish_article(db_article)
+                        )
+                        telegram_results.append({
+                            "article_id": db_article.id,
+                            "telegram": telegram_result
+                        })
+                        loop.close()
+                    except Exception as e:
+                        logger.error(f"Failed to publish article {db_article.id} to Telegram: {e}")
+                        telegram_results.append({
+                            "article_id": db_article.id,
+                            "telegram": {"success": False, "error": str(e)}
+                        })
+                
+                # Mark as published
+                article.update_status(
+                    db=db,
+                    db_obj=db_article,
+                    status="published"
+                )
+                
+                published_count += 1
+                
+            except Exception as e:
+                logger.error(f"Error publishing article {db_article.id}: {e}")
+                continue
         
         logger.info(f"Completed publish_articles task: {published_count} articles published")
+        
+        # Calculate success rates
+        telegram_success = len([r for r in telegram_results if r.get("telegram", {}).get("success")])
+        telegram_total = len(telegram_results)
         
         return {
             "status": "success",
             "message": f"Published {published_count} articles",
-            "published": published_count
+            "published": published_count,
+            "telegram": {
+                "enabled": telegram_service.enabled,
+                "published": telegram_success,
+                "total": telegram_total,
+                "results": telegram_results
+            }
         }
         
     except Exception as e:

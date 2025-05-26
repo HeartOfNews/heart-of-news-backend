@@ -4,7 +4,7 @@ Main API Router for the Heart of News API
 
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import articles, sources, health, tasks, auth, users
+from app.api.v1.endpoints import articles, sources, health, tasks, auth, users, telegram
 
 api_router = APIRouter()
 
@@ -14,3 +14,4 @@ api_router.include_router(health.router, prefix="/health", tags=["health"])
 api_router.include_router(tasks.router, prefix="/tasks", tags=["tasks"])
 api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(users.router, prefix="/users", tags=["users"])
+api_router.include_router(telegram.router, prefix="/telegram", tags=["telegram"])

@@ -116,6 +116,34 @@ class Settings(BaseSettings):
     # Health checks
     HEALTH_CHECK_INTERVAL: int = 60  # seconds
     
+    # Telegram Bot Configuration
+    TELEGRAM_BOT_TOKEN: Optional[str] = None
+    TELEGRAM_CHANNEL_ID: Optional[str] = None
+    TELEGRAM_ENABLED: bool = False
+    TELEGRAM_MESSAGE_TEMPLATE: str = """
+🗞️ **{title}**
+
+📰 {summary}
+
+🏛️ {region_flag} #{categories}
+    """.strip()
+    
+    # Russian Telegram Channel Configuration
+    TELEGRAM_RU_BOT_TOKEN: Optional[str] = None
+    TELEGRAM_RU_CHANNEL_ID: Optional[str] = None
+    TELEGRAM_RU_ENABLED: bool = False
+    TELEGRAM_RU_MESSAGE_TEMPLATE: str = """
+🗞️ **{title}**
+
+📰 {summary}
+
+🏛️ {region_flag} #{categories}
+    """.strip()
+    
+    # Language and localization
+    SUPPORTED_LANGUAGES: List[str] = ["en", "ru"]
+    DEFAULT_LANGUAGE: str = "en"
+    
     class Config:
         case_sensitive = True
         env_file = ".env"
