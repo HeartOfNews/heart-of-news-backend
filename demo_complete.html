@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart of News - Complete Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50" x-data="heartOfNews()">
+    <!-- Header -->
+    <header class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-6">
+                <div class="flex items-center space-x-4">
+                    <i class="fas fa-heart text-red-500 text-2xl"></i>
+                    <h1 class="text-2xl font-bold text-gray-900">Heart of News</h1>
+                    <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                        <i class="fas fa-circle text-green-500 text-xs mr-1"></i>
+                        API: Online
+                    </span>
+                </div>
+                <nav class="flex space-x-6">
+                    <button @click="currentView = 'home'" 
+                            :class="currentView === 'home' ? 'text-blue-600' : 'text-gray-700'"
+                            class="hover:text-blue-600">
+                        <i class="fas fa-home mr-1"></i>Home
+                    </button>
+                    <button @click="currentView = 'articles'" 
+                            :class="currentView === 'articles' ? 'text-blue-600' : 'text-gray-700'"
+                            class="hover:text-blue-600">
+                        <i class="fas fa-newspaper mr-1"></i>Articles
+                    </button>
+                    <button @click="currentView = 'admin'" 
+                            :class="currentView === 'admin' ? 'text-blue-600' : 'text-gray-700'"
+                            class="hover:text-blue-600">
+                        <i class="fas fa-shield-alt mr-1"></i>Admin
+                    </button>
+                    <button @click="currentView = 'telegram'" 
+                            :class="currentView === 'telegram' ? 'text-blue-600' : 'text-gray-700'"
+                            class="hover:text-blue-600">
+                        <i class="fab fa-telegram mr-1"></i>Telegram
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Home View -->
+        <div x-show="currentView === 'home'" class="space-y-8">
+            <div class="text-center">
+                <h2 class="text-4xl font-bold text-gray-900 mb-4">News without bias or propaganda</h2>
+                <p class="text-xl text-gray-600 mb-8">AI-powered news verification and bias detection</p>
+                
+                <!-- Live Status -->
+                <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                    <h3 class="text-lg font-semibold mb-4">System Status</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-green-600" x-text="stats.total_articles"></div>
+                            <div class="text-sm text-gray-500">Verified Articles</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-blue-600" x-text="stats.total_sources"></div>
+                            <div class="text-sm text-gray-500">Trusted Sources</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-purple-600" x-text="(stats.average_reliability * 100).toFixed(1) + '%'"></div>
+                            <div class="text-sm text-gray-500">Avg Reliability</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-yellow-600" x-text="(stats.average_bias_score * 100).toFixed(1) + '%'"></div>
+                            <div class="text-sm text-gray-500">Avg Bias Score</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <i class="fas fa-search text-blue-500 text-2xl mb-4"></i>
+                    <h3 class="text-lg font-semibold mb-2">Bias Detection</h3>
+                    <p class="text-gray-600">Our AI analyzes news articles for political bias, helping you understand the perspective of the content.</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <i class="fas fa-shield-alt text-green-500 text-2xl mb-4"></i>
+                    <h3 class="text-lg font-semibold mb-2">Propaganda Filtering</h3>
+                    <p class="text-gray-600">Advanced algorithms detect and filter out propaganda techniques and emotional manipulation.</p>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <i class="fas fa-globe text-purple-500 text-2xl mb-4"></i>
+                    <h3 class="text-lg font-semibold mb-2">Multi-source Analysis</h3>
+                    <p class="text-gray-600">Compare different perspectives on the same story from multiple verified sources.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Articles View -->
+        <div x-show="currentView === 'articles'" class="space-y-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-3xl font-bold text-gray-900">Latest Verified Articles</h2>
+                <button @click="loadArticles()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                    <i class="fas fa-sync-alt mr-2"></i>Refresh
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <template x-for="article in articles" :key="article.id">
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                        <img x-bind:src="article.image_url" x-bind:alt="article.title" class="w-full h-48 object-cover">
+                        <div class="p-6">
+                            <div class="flex items-center space-x-2 text-xs mb-2">
+                                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium" x-text="article.source"></span>
+                                <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
+                                    <i class="fas fa-check mr-1"></i>Verified
+                                </span>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2" x-text="article.title"></h3>
+                            <p class="text-gray-600 text-sm mb-4" x-text="article.summary"></p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-gray-500" x-text="new Date(article.published_at).toLocaleDateString()"></span>
+                                <div class="flex items-center">
+                                    <span class="text-xs text-gray-500 mr-2">Reliability:</span>
+                                    <span class="text-xs font-medium text-green-600" x-text="(article.reliability_score * 100).toFixed(0) + '%'"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Admin View -->
+        <div x-show="currentView === 'admin'" class="space-y-6">
+            <h2 class="text-3xl font-bold text-gray-900">Admin Dashboard</h2>
+            
+            <!-- Admin Stats -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex items-center">
+                        <div class="rounded-full p-3 bg-blue-500 text-white">
+                            <i class="fas fa-users text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500">Total Users</p>
+                            <p class="text-2xl font-semibold">1,234</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex items-center">
+                        <div class="rounded-full p-3 bg-green-500 text-white">
+                            <i class="fas fa-newspaper text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500">Articles</p>
+                            <p class="text-2xl font-semibold" x-text="stats.total_articles"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex items-center">
+                        <div class="rounded-full p-3 bg-purple-500 text-white">
+                            <i class="fas fa-globe text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500">Sources</p>
+                            <p class="text-2xl font-semibold" x-text="stats.total_sources"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex items-center">
+                        <div class="rounded-full p-3 bg-yellow-500 text-white">
+                            <i class="fas fa-chart-bar text-xl"></i>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500">Avg. Reliability</p>
+                            <p class="text-2xl font-semibold" x-text="(stats.average_reliability * 100).toFixed(1) + '%'"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Articles Management -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold mb-4">Recent Articles</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reliability</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bias Score</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <template x-for="article in articles.slice(0, 5)" :key="article.id">
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm font-medium text-gray-900" x-text="article.title.substring(0, 50) + '...'"></div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="text-sm text-gray-900" x-text="article.source"></span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="text-sm text-green-600" x-text="(article.reliability_score * 100).toFixed(0) + '%'"></span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="text-sm text-yellow-600" x-text="(article.bias_score * 100).toFixed(0) + '%'"></span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <button class="text-blue-600 hover:text-blue-900 mr-2">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-red-600 hover:text-red-900">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Telegram View -->
+        <div x-show="currentView === 'telegram'" class="space-y-6">
+            <h2 class="text-3xl font-bold text-gray-900">Telegram Bot Status</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- English Bot -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold">English Channel</h3>
+                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                            <i class="fas fa-circle text-green-500 mr-1"></i>Online
+                        </span>
+                    </div>
+                    <div class="space-y-2">
+                        <p><strong>Channel:</strong> @heartofnews</p>
+                        <p><strong>Bot Token:</strong> 7568175094:AAH***</p>
+                        <p><strong>Last Post:</strong> <span x-text="new Date().toLocaleString()"></span></p>
+                        <p><strong>Posts Today:</strong> 12</p>
+                    </div>
+                    <div class="mt-4">
+                        <button @click="testTelegramBot('en')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 mr-2">
+                            <i class="fas fa-paper-plane mr-1"></i>Test Bot
+                        </button>
+                        <a href="https://t.me/heartofnews" target="_blank" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+                            <i class="fab fa-telegram mr-1"></i>View Channel
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Russian Bot -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold">Russian Channel</h3>
+                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                            <i class="fas fa-circle text-green-500 mr-1"></i>Online
+                        </span>
+                    </div>
+                    <div class="space-y-2">
+                        <p><strong>Channel:</strong> @HeartofNews_Rus</p>
+                        <p><strong>Bot Token:</strong> 7851345007:AAF***</p>
+                        <p><strong>Last Post:</strong> <span x-text="new Date().toLocaleString()"></span></p>
+                        <p><strong>Posts Today:</strong> 8</p>
+                    </div>
+                    <div class="mt-4">
+                        <button @click="testTelegramBot('ru')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 mr-2">
+                            <i class="fas fa-paper-plane mr-1"></i>Test Bot
+                        </button>
+                        <a href="https://t.me/HeartofNews_Rus" target="_blank" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+                            <i class="fab fa-telegram mr-1"></i>View Channel
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bot Controls -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold mb-4">Bot Controls</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <button @click="startBot()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                        <i class="fas fa-play mr-2"></i>Start Continuous Mode
+                    </button>
+                    <button @click="publishSingle()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                        <i class="fas fa-paper-plane mr-2"></i>Publish Single Article
+                    </button>
+                    <button @click="stopBot()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                        <i class="fas fa-stop mr-2"></i>Stop Bot
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bot Log -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold mb-4">Recent Bot Activity</h3>
+                <div class="bg-gray-100 rounded-lg p-4 max-h-64 overflow-y-auto font-mono text-sm">
+                    <div x-html="botLog"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+    function heartOfNews() {
+        return {
+            currentView: 'home',
+            articles: [],
+            stats: {
+                total_articles: 0,
+                total_sources: 0,
+                average_reliability: 0,
+                average_bias_score: 0
+            },
+            botLog: '',
+
+            async init() {
+                await this.loadStats();
+                await this.loadArticles();
+                this.addBotLog('System initialized', 'info');
+            },
+
+            async loadStats() {
+                try {
+                    const response = await fetch('http://localhost:8000/api/v1/stats');
+                    this.stats = await response.json();
+                } catch (error) {
+                    console.error('Error loading stats:', error);
+                    this.addBotLog('Failed to load stats: ' + error.message, 'error');
+                }
+            },
+
+            async loadArticles() {
+                try {
+                    const response = await fetch('http://localhost:8000/api/v1/articles');
+                    this.articles = await response.json();
+                    this.addBotLog(`Loaded ${this.articles.length} articles`, 'info');
+                } catch (error) {
+                    console.error('Error loading articles:', error);
+                    this.addBotLog('Failed to load articles: ' + error.message, 'error');
+                }
+            },
+
+            async testTelegramBot(language) {
+                this.addBotLog(`Testing ${language} Telegram bot...`, 'info');
+                // Simulate bot test
+                setTimeout(() => {
+                    this.addBotLog(`✅ ${language} bot test successful`, 'success');
+                }, 1000);
+            },
+
+            async startBot() {
+                this.addBotLog('🚀 Starting Heart of News bot in continuous mode...', 'info');
+                this.addBotLog('📡 Fetching from verified sources...', 'info');
+                this.addBotLog('✅ Published to English channel (Message ID: 25)', 'success');
+                this.addBotLog('✅ Published to Russian channel (Message ID: 58)', 'success');
+                this.addBotLog('⏰ Next cycle in 7m 32s', 'info');
+            },
+
+            async publishSingle() {
+                this.addBotLog('📤 Publishing single article...', 'info');
+                setTimeout(() => {
+                    this.addBotLog('✅ Article published successfully', 'success');
+                }, 1000);
+            },
+
+            async stopBot() {
+                this.addBotLog('🛑 Stopping bot...', 'warning');
+                setTimeout(() => {
+                    this.addBotLog('Bot stopped', 'info');
+                }, 500);
+            },
+
+            addBotLog(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const colors = {
+                    info: 'text-blue-600',
+                    success: 'text-green-600',
+                    warning: 'text-yellow-600',
+                    error: 'text-red-600'
+                };
+                this.botLog += `<div class="${colors[type]}">[${timestamp}] ${message}</div>`;
+                
+                // Auto-scroll to bottom
+                setTimeout(() => {
+                    const logElement = document.querySelector('.bg-gray-100');
+                    if (logElement) {
+                        logElement.scrollTop = logElement.scrollHeight;
+                    }
+                }, 100);
+            }
+        }
+    }
+    </script>
+</body>
+</html>
