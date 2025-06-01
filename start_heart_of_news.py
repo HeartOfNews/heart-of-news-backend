@@ -13,7 +13,7 @@ from datetime import datetime
 # Your verified bot credentials
 ENGLISH_BOT = "7568175094:AAHh3nHCoRqssSUo9A1FLnM5yi5K1bu54vs"
 ENGLISH_CHANNEL = "-1002643653940"
-RUSSIAN_BOT = "7294645697:AAGJxaixBkgtBqAIpFU-kR8uzo06amOQOLs"
+RUSSIAN_BOT = "7851345007:AAF4ubtbbR5NSiMxBYRRqtY31hMpEq9AZxM"
 RUSSIAN_CHANNEL = "@HeartofNews_Rus"
 
 def fetch_real_news_from_ap():
