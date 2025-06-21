@@ -20,21 +20,7 @@ aiohttp>=3.8.4
 # Scraping and parsing
 beautifulsoup4>=4.12.0
 lxml>=4.9.2
-scrapy>=2.8.0
 feedparser>=6.0.10
-playwright>=1.32.0
-
-# NLP and AI
-transformers>=4.28.0
-torch>=1.13.0
-spacy>=3.5.2
-nltk>=3.8.1
-scikit-learn>=1.2.2
-
-# Storage
-boto3>=1.26.0
-elasticsearch>=8.7.0
-redis>=4.5.4
 
 # Utilities
 python-dateutil>=2.8.2
@@ -47,4 +33,3 @@ tenacity>=8.2.2
 pytest>=7.3.1
 pytest-asyncio>=0.21.0
 pytest-cov>=4.1.0
-httpx>=0.24.0

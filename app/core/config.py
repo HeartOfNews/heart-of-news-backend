@@ -40,13 +40,11 @@ class Settings(BaseSettings):
     def assemble_db_connection(cls, v: Optional[str], values: dict[str, any]) -> any:
         if isinstance(v, str):
             return v
-        return PostgresDsn.build(
-            scheme="postgresql",
-            user=values.get("POSTGRES_USER"),
-            password=values.get("POSTGRES_PASSWORD"),
-            host=values.get("POSTGRES_SERVER"),
-            path=f"/{values.get('POSTGRES_DB') or ''}",
-        )
+        user = values.get("POSTGRES_USER")
+        password = values.get("POSTGRES_PASSWORD")
+        host = values.get("POSTGRES_SERVER")
+        db = values.get("POSTGRES_DB")
+        return f"postgresql://{user}:{password}@{host}/{db}"
     
     # Redis
     REDIS_HOST: str = "localhost"

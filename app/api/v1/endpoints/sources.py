@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.schemas.source import Source, SourceCreate, SourceUpdate
+from app.crud import source as crud_source
 
 router = APIRouter()
 
@@ -22,26 +23,13 @@ def read_sources(
     """
     Retrieve news sources with optional filtering.
     """
-    # This will be implemented with actual database queries
-    # For now, return a placeholder response
-    return [
-        {
-            "id": "source-1",
-            "name": "Example News",
-            "url": "https://example-news.com",
-            "category": "General",
-            "reliability_score": 0.85,
-            "bias_score": 0.1  # slightly biased
-        },
-        {
-            "id": "source-2",
-            "name": "Tech News Daily",
-            "url": "https://technewsdaily.com",
-            "category": "Technology",
-            "reliability_score": 0.92,
-            "bias_score": -0.05  # very slightly biased in opposite direction
-        }
-    ]
+    sources = crud_source.get_sources(
+        db=db, 
+        skip=skip, 
+        limit=limit, 
+        category=category
+    )
+    return sources
 
 @router.get("/{source_id}", response_model=Source)
 def read_source(
@@ -51,19 +39,10 @@ def read_source(
     """
     Get a specific news source by ID.
     """
-    # This will be implemented with actual database queries
-    # For now, return a placeholder response
-    return {
-        "id": source_id,
-        "name": "Example News Source",
-        "url": "https://example-news.com",
-        "category": "General",
-        "feed_url": "https://example-news.com/rss",
-        "logo_url": "https://example-news.com/logo.png",
-        "reliability_score": 0.85,
-        "bias_score": 0.1,
-        "last_crawled_at": "2023-05-01T10:30:00Z"
-    }
+    source = crud_source.get_source(db=db, source_id=source_id)
+    if not source:
+        raise HTTPException(status_code=404, detail="Source not found")
+    return source
 
 @router.post("/", response_model=Source)
 def create_source(
@@ -73,14 +52,37 @@ def create_source(
     """
     Create a new news source (admin only).
     """
-    # This will be implemented with actual database operations
-    # For now, return a placeholder response
-    return {
-        "id": "new-source-id",
-        "name": source_in.name,
-        "url": source_in.url,
-        "category": source_in.category,
-        "feed_url": source_in.feed_url,
-        "reliability_score": 0.0,  # Initial score
-        "bias_score": 0.0,  # Initial score
-    }
+    # Check if source already exists
+    existing_source = crud_source.get_source_by_url(db=db, url=str(source_in.url))
+    if existing_source:
+        raise HTTPException(status_code=400, detail="Source with this URL already exists")
+    
+    source = crud_source.create_source(db=db, source=source_in)
+    return source
+
+@router.put("/{source_id}", response_model=Source)
+def update_source(
+    source_id: str,
+    source_in: SourceUpdate,
+    db: Session = Depends(get_db),
+) -> Any:
+    """
+    Update a news source (admin only).
+    """
+    source = crud_source.update_source(db=db, source_id=source_id, source_update=source_in)
+    if not source:
+        raise HTTPException(status_code=404, detail="Source not found")
+    return source
+
+@router.delete("/{source_id}")
+def delete_source(
+    source_id: str,
+    db: Session = Depends(get_db),
+) -> Any:
+    """
+    Delete a news source (admin only).
+    """
+    success = crud_source.delete_source(db=db, source_id=source_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Source not found")
+    return {"message": "Source deleted successfully"}

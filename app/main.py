@@ -2,18 +2,31 @@
 Heart of News Backend Application - Main entry point
 """
 
+import asyncio
 import uvicorn
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.api.v1.api import api_router
+from app.services.tasks.task_queue import task_queue
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    await task_queue.start_workers()
+    yield
+    # Shutdown
+    await task_queue.stop_workers()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     description="API for Heart of News - AI-powered propaganda-free news aggregation",
     version=settings.VERSION,
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    lifespan=lifespan,
 )
 
 # Configure CORS
