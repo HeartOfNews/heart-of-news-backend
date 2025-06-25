@@ -1,5 +1,5 @@
 """
-Comprehensive bias detection service for analyzing news articles
+Comprehensive bias detection service for analyzing news articles (Mock implementation for demo)
 """
 
 import logging
@@ -15,12 +15,12 @@ logger = logging.getLogger(__name__)
 
 class BiasDetector:
     """
-    Comprehensive service for detecting various types of bias in news articles
+    Comprehensive service for detecting various types of bias in news articles (Mock implementation for demo)
     """
     
     def __init__(self, model_path: Optional[str] = None):
         """
-        Initialize the bias detector with AI models
+        Initialize the bias detector with mock AI models
         """
         self.model_path = model_path
         self.sentiment_analyzer = SentimentAnalyzer()

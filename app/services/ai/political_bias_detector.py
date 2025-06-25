@@ -1,51 +1,28 @@
 """
-Political bias detection using NLP and machine learning
+Political bias detection using simple rule-based logic (Mock implementation for demo)
 """
 
 import logging
 import asyncio
 import re
 from typing import Dict, List, Tuple, Optional
-from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
-import torch
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
-import numpy as np
 
 logger = logging.getLogger(__name__)
 
 
 class PoliticalBiasDetector:
     """
-    Detect political bias in news articles using multiple approaches
+    Detect political bias in news articles using rule-based logic (Mock implementation for demo)
     """
     
     def __init__(self):
-        self.device = 0 if torch.cuda.is_available() else -1
-        self._emotion_classifier = None
-        self._tokenizer = None
         self._bias_keywords = self._load_bias_keywords()
         self._political_entities = self._load_political_entities()
         
     async def _load_models(self):
-        """Load transformer models for bias detection"""
-        if self._emotion_classifier is None:
-            logger.info("Loading political bias detection models...")
-            
-            loop = asyncio.get_event_loop()
-            
-            # Load emotion classifier which can help detect biased language
-            self._emotion_classifier = await loop.run_in_executor(
-                None,
-                lambda: pipeline(
-                    "text-classification",
-                    model="j-hartmann/emotion-english-distilroberta-base",
-                    device=self.device,
-                    return_all_scores=True
-                )
-            )
-            
-            logger.info("Political bias detection models loaded")
+        """Mock model loading - no actual models needed"""
+        logger.info("Mock political bias detection models loaded")
+        await asyncio.sleep(0.1)  # Simulate loading time
     
     def _load_bias_keywords(self) -> Dict[str, List[str]]:
         """Load political bias keywords categorized by leaning"""
@@ -248,33 +225,25 @@ class PoliticalBiasDetector:
         return (right_patterns - left_patterns) / total_patterns
     
     async def _analyze_emotional_bias(self, text: str) -> float:
-        """Analyze emotional language that might indicate bias"""
+        """Analyze emotional language that might indicate bias (simplified mock)"""
         try:
-            # Truncate text for model
-            max_length = 512
-            if len(text.split()) > max_length:
-                text = ' '.join(text.split()[:max_length])
+            text_lower = text.lower()
             
-            # Get emotion classification
-            loop = asyncio.get_event_loop()
-            emotions = await loop.run_in_executor(
-                None,
-                lambda: self._emotion_classifier(text)
-            )
+            # Simple emotional language detection
+            emotional_words = [
+                'outrageous', 'disgusting', 'appalling', 'shocking', 'terrible',
+                'amazing', 'incredible', 'fantastic', 'brilliant', 'awful',
+                'horrible', 'wonderful', 'devastating', 'thrilling'
+            ]
             
-            # Map emotions to potential bias indicators
-            emotion_scores = {emotion['label']: emotion['score'] for emotion in emotions[0]}
+            word_count = len(text.split())
+            emotional_count = sum(1 for word in emotional_words if word in text_lower)
             
-            # Anger and disgust often indicate bias
-            bias_emotions = emotion_scores.get('anger', 0) + emotion_scores.get('disgust', 0)
-            neutral_emotions = emotion_scores.get('neutral', 0) + emotion_scores.get('joy', 0)
+            # Calculate emotional bias strength
+            emotional_ratio = emotional_count / max(word_count / 100, 1)
             
-            # Higher emotional charge suggests potential bias
-            emotional_bias_strength = bias_emotions - neutral_emotions
-            
-            # This doesn't indicate direction, just presence of emotional bias
-            # Direction would need additional context analysis
-            return emotional_bias_strength * 0.5  # Scale down the impact
+            # Scale to reasonable range
+            return min(emotional_ratio * 0.5, 1.0)
             
         except Exception as e:
             logger.error(f"Error in emotional bias analysis: {str(e)}")
@@ -312,18 +281,13 @@ class PoliticalBiasDetector:
                     'context_sentiment': self._analyze_entity_context(text_lower, entity)
                 })
         
-        # Check for emotional language
-        try:
-            emotions = await asyncio.get_event_loop().run_in_executor(
-                None,
-                lambda: self._emotion_classifier(text[:512])
-            )
-            emotion_scores = {emotion['label']: emotion['score'] for emotion in emotions[0]}
-            indicators['emotional_language'] = (
-                emotion_scores.get('anger', 0) + emotion_scores.get('disgust', 0) > 0.3
-            )
-        except:
-            pass
+        # Check for emotional language (simplified)
+        emotional_words = [
+            'outrageous', 'disgusting', 'appalling', 'shocking', 'terrible',
+            'amazing', 'incredible', 'fantastic', 'brilliant', 'awful'
+        ]
+        emotional_count = sum(1 for word in emotional_words if word in text_lower)
+        indicators['emotional_language'] = emotional_count > 2
         
         # Check for one-sided source attribution
         source_patterns = [

@@ -1,14 +1,11 @@
 """
-Fact vs Opinion classification using NLP techniques
+Fact vs Opinion classification using simple rule-based logic (Mock implementation for demo)
 """
 
 import logging
 import asyncio
 import re
 from typing import Dict, List, Tuple, Optional
-from transformers import pipeline, AutoTokenizer
-import torch
-import spacy
 from collections import Counter
 
 logger = logging.getLogger(__name__)
@@ -16,45 +13,17 @@ logger = logging.getLogger(__name__)
 
 class FactOpinionClassifier:
     """
-    Classify text segments as factual statements or opinions
+    Classify text segments as factual statements or opinions (Mock implementation for demo)
     """
     
     def __init__(self):
-        self.device = 0 if torch.cuda.is_available() else -1
-        self._text_classifier = None
-        self._nlp = None
         self._fact_indicators = self._load_fact_indicators()
         self._opinion_indicators = self._load_opinion_indicators()
         
     async def _load_models(self):
-        """Load NLP models for fact/opinion classification"""
-        if self._text_classifier is None:
-            logger.info("Loading fact/opinion classification models...")
-            
-            loop = asyncio.get_event_loop()
-            
-            # Load a general text classifier (can be fine-tuned for fact/opinion)
-            self._text_classifier = await loop.run_in_executor(
-                None,
-                lambda: pipeline(
-                    "text-classification",
-                    model="microsoft/DialoGPT-medium",  # Could be replaced with custom model
-                    device=self.device,
-                    return_all_scores=True
-                )
-            )
-            
-            # Load spaCy for linguistic analysis
-            try:
-                self._nlp = await loop.run_in_executor(
-                    None,
-                    lambda: spacy.load("en_core_web_sm")
-                )
-            except OSError:
-                logger.warning("spaCy model 'en_core_web_sm' not found. Install with: python -m spacy download en_core_web_sm")
-                self._nlp = None
-            
-            logger.info("Fact/opinion classification models loaded")
+        """Mock model loading - no actual models needed"""
+        logger.info("Mock fact/opinion classification models loaded")
+        await asyncio.sleep(0.1)  # Simulate loading time
     
     def _load_fact_indicators(self) -> Dict[str, List[str]]:
         """Load indicators that suggest factual content"""
@@ -199,52 +168,47 @@ class FactOpinionClassifier:
         return fact_score / total_score
     
     def _analyze_sentence_structure(self, sentence: str) -> float:
-        """Analyze sentence structure for factual vs opinion indicators"""
-        if not self._nlp:
-            return 0.5  # Neutral if no spaCy model
+        """Analyze sentence structure for factual vs opinion indicators (simplified mock)"""
+        sentence_lower = sentence.lower()
         
-        try:
-            doc = self._nlp(sentence)
-            
-            factual_features = 0
-            opinion_features = 0
-            
-            # Analyze grammatical features
-            for token in doc:
-                # Factual indicators
-                if token.pos_ in ['NUM', 'PROPN']:  # Numbers and proper nouns
-                    factual_features += 1
-                elif token.ent_type_ in ['DATE', 'TIME', 'MONEY', 'PERCENT', 'QUANTITY']:
-                    factual_features += 1
-                elif token.tag_ in ['VBD', 'VBN']:  # Past tense verbs
-                    factual_features += 0.5
-                
-                # Opinion indicators
-                elif token.pos_ in ['ADJ'] and token.dep_ in ['amod']:  # Subjective adjectives
-                    opinion_features += 1
-                elif token.tag_ in ['MD']:  # Modal verbs
-                    opinion_features += 1
-                elif token.dep_ in ['nsubj'] and token.text.lower() == 'i':  # First person
-                    opinion_features += 1
-            
-            # Calculate ratio
-            total_features = factual_features + opinion_features
-            if total_features == 0:
-                return 0.5
-            
-            return factual_features / total_features
-            
-        except Exception as e:
-            logger.warning(f"Error in structure analysis: {str(e)}")
+        factual_features = 0
+        opinion_features = 0
+        
+        # Simple pattern matching instead of spaCy
+        # Numbers and dates indicate factual content
+        import re
+        if re.search(r'\d+', sentence):
+            factual_features += 1
+        if re.search(r'\b\d{4}\b', sentence):  # Years
+            factual_features += 1
+        if re.search(r'\$\d+', sentence):  # Money
+            factual_features += 1
+        
+        # First person pronouns indicate opinion
+        if re.search(r'\bi\b|\bmy\b|\bme\b', sentence_lower):
+            opinion_features += 1
+        
+        # Modal verbs indicate opinion
+        if re.search(r'\bshould\b|\bwould\b|\bcould\b|\bmight\b|\bmay\b', sentence_lower):
+            opinion_features += 1
+        
+        # Evaluative adjectives indicate opinion
+        evaluative_adj = ['good', 'bad', 'excellent', 'terrible', 'amazing', 'awful', 'great', 'poor']
+        for adj in evaluative_adj:
+            if adj in sentence_lower:
+                opinion_features += 1
+                break
+        
+        # Calculate ratio
+        total_features = factual_features + opinion_features
+        if total_features == 0:
             return 0.5
+        
+        return factual_features / total_features
     
     async def _analyze_content_features(self, sentence: str) -> float:
-        """Analyze content-level features using transformers"""
+        """Analyze content-level features using simple pattern matching"""
         try:
-            # Use text classification to get general language patterns
-            # Note: This would benefit from a model specifically trained on fact/opinion data
-            
-            # For now, use simpler heuristics based on content
             sentence_lower = sentence.lower()
             
             # Check for objective reporting language

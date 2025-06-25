@@ -34,8 +34,9 @@ async def scrape_source_articles(source_id: str, limit: int = 10):
             "url": source.url,
             "feed_url": source.feed_url,
             "scraper_type": source.scraper_config.get("type", "rss") if source.scraper_config else "rss",
-            **source.scraper_config if source.scraper_config else {}
         }
+        if source.scraper_config:
+            source_config.update(source.scraper_config)
         
         scraper = ScraperFactory.create_scraper(source_config)
         if not scraper:

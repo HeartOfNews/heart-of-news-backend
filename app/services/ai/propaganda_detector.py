@@ -1,5 +1,5 @@
 """
-Propaganda technique detection using NLP and pattern matching
+Propaganda technique detection using simple pattern matching (Mock implementation for demo)
 """
 
 import logging
@@ -7,32 +7,22 @@ import re
 import asyncio
 from typing import Dict, List, Tuple, Optional, Any
 from collections import defaultdict
-import spacy
 
 logger = logging.getLogger(__name__)
 
 
 class PropagandaTechniqueDetector:
     """
-    Detect propaganda techniques in news articles based on established taxonomies
+    Detect propaganda techniques in news articles using simple pattern matching (Mock implementation for demo)
     """
     
     def __init__(self):
-        self._nlp = None
         self._propaganda_patterns = self._load_propaganda_patterns()
         
     async def _load_models(self):
-        """Load NLP models for propaganda detection"""
-        if self._nlp is None:
-            try:
-                loop = asyncio.get_event_loop()
-                self._nlp = await loop.run_in_executor(
-                    None,
-                    lambda: spacy.load("en_core_web_sm")
-                )
-            except OSError:
-                logger.warning("spaCy model not found. Some features will be limited.")
-                self._nlp = None
+        """Mock model loading - no actual models needed"""
+        logger.info("Mock propaganda detection models loaded")
+        await asyncio.sleep(0.1)  # Simulate loading time
     
     def _load_propaganda_patterns(self) -> Dict[str, Dict[str, Any]]:
         """Load patterns for detecting propaganda techniques"""

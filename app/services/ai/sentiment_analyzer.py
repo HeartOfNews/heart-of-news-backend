@@ -1,11 +1,11 @@
 """
-Sentiment analysis service using transformers
+Sentiment analysis service using transformers (Mock implementation for demo)
 """
 
 import logging
+import re
+import random
 from typing import Dict, List, Optional, Tuple
-from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
-import torch
 import asyncio
 from functools import lru_cache
 
@@ -14,48 +14,34 @@ logger = logging.getLogger(__name__)
 
 class SentimentAnalyzer:
     """
-    Advanced sentiment analysis using pre-trained transformer models
+    Mock sentiment analysis for demo (simplified rule-based implementation)
     """
     
-    def __init__(self, model_name: str = "cardiffnlp/twitter-roberta-base-sentiment-latest"):
+    def __init__(self, model_name: str = "mock-sentiment-model"):
         """
         Initialize the sentiment analyzer
         
         Args:
-            model_name: HuggingFace model name for sentiment analysis
+            model_name: Mock model name for demo
         """
         self.model_name = model_name
-        self.device = 0 if torch.cuda.is_available() else -1
-        self._pipeline = None
-        self._tokenizer = None
+        self._positive_words = [
+            'good', 'great', 'excellent', 'amazing', 'wonderful', 'fantastic',
+            'positive', 'love', 'like', 'enjoy', 'happy', 'pleased', 'satisfied'
+        ]
+        self._negative_words = [
+            'bad', 'terrible', 'awful', 'horrible', 'hate', 'dislike', 'angry',
+            'sad', 'disappointed', 'frustrated', 'annoyed', 'upset', 'worried'
+        ]
         
     async def _load_models(self):
-        """Load models asynchronously"""
-        if self._pipeline is None:
-            logger.info(f"Loading sentiment analysis model: {self.model_name}")
-            
-            # Run model loading in thread pool to avoid blocking
-            loop = asyncio.get_event_loop()
-            self._pipeline = await loop.run_in_executor(
-                None,
-                lambda: pipeline(
-                    "sentiment-analysis",
-                    model=self.model_name,
-                    device=self.device,
-                    return_all_scores=True
-                )
-            )
-            
-            self._tokenizer = await loop.run_in_executor(
-                None,
-                lambda: AutoTokenizer.from_pretrained(self.model_name)
-            )
-            
-            logger.info("Sentiment analysis model loaded successfully")
+        """Mock model loading"""
+        logger.info(f"Mock sentiment analysis model loaded: {self.model_name}")
+        await asyncio.sleep(0.1)  # Simulate loading time
     
     async def analyze_sentiment(self, text: str) -> Dict[str, float]:
         """
-        Analyze sentiment of text
+        Analyze sentiment of text (mock implementation)
         
         Args:
             text: Text to analyze
@@ -66,40 +52,34 @@ class SentimentAnalyzer:
         await self._load_models()
         
         try:
-            # Truncate text if too long for the model
-            max_length = self._tokenizer.model_max_length - 2  # Account for special tokens
-            tokens = self._tokenizer.encode(text, add_special_tokens=False)
-            if len(tokens) > max_length:
-                tokens = tokens[:max_length]
-                text = self._tokenizer.decode(tokens)
+            text_lower = text.lower()
+            words = text_lower.split()
             
-            # Run inference in thread pool
-            loop = asyncio.get_event_loop()
-            results = await loop.run_in_executor(
-                None,
-                lambda: self._pipeline(text)
-            )
+            positive_count = sum(1 for word in words if word in self._positive_words)
+            negative_count = sum(1 for word in words if word in self._negative_words)
+            total_sentiment_words = positive_count + negative_count
             
-            # Convert results to standardized format
-            sentiment_scores = {}
-            for result in results[0]:  # Pipeline returns list of lists
-                label = result['label'].lower()
-                score = result['score']
-                
-                # Map common label variants to standard names
-                if label in ['negative', 'neg']:
-                    sentiment_scores['negative'] = score
-                elif label in ['positive', 'pos']:
-                    sentiment_scores['positive'] = score
-                elif label in ['neutral', 'neu']:
-                    sentiment_scores['neutral'] = score
+            if total_sentiment_words == 0:
+                # Neutral text
+                return {'negative': 0.2, 'neutral': 0.6, 'positive': 0.2}
             
-            # Ensure all required keys exist
-            for key in ['negative', 'neutral', 'positive']:
-                if key not in sentiment_scores:
-                    sentiment_scores[key] = 0.0
+            # Calculate basic sentiment scores
+            positive_ratio = positive_count / len(words)
+            negative_ratio = negative_count / len(words)
             
-            return sentiment_scores
+            # Normalize scores
+            base_neutral = 0.4
+            positive_score = min(positive_ratio * 3, 0.8)
+            negative_score = min(negative_ratio * 3, 0.8)
+            neutral_score = max(base_neutral - (positive_score + negative_score) / 2, 0.1)
+            
+            # Ensure scores sum to approximately 1
+            total = positive_score + negative_score + neutral_score
+            return {
+                'positive': round(positive_score / total, 3),
+                'negative': round(negative_score / total, 3),
+                'neutral': round(neutral_score / total, 3)
+            }
             
         except Exception as e:
             logger.error(f"Error in sentiment analysis: {str(e)}")
